@@ -8,10 +8,10 @@ try:
             _bdist_wheel.finalize_options(self)
             self.root_is_pure = False
 
-        #def get_tag(self):
-        #    python, abi, plat = _bdist_wheel.get_tag(self)
-        #    python, abi = 'py3', 'none'
-        #    return python, abi, plat
+        def get_tag(self):
+            python, abi, plat = _bdist_wheel.get_tag(self)
+            python, abi = 'py3', 'none'
+            return python, abi, plat
 
     class MyDistribution(Distribution):
 

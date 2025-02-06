@@ -21,7 +21,7 @@ jobs:
 
       - name: Build wheels
         env:
-          CIBW_BUILD: py3-none
+          CIBW_BUILD: pp37-manylinux_x86_64
           CIBW_ARCHS: x86_64
           GITHUB_API_TOKEN: ${{ secrets.AGENT_DOWNLOAD_TOKEN }}
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: ""
