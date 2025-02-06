@@ -17,7 +17,7 @@ ROTEL_REPO=rotel
 
 $CWD/download-gh-asset.sh $ROTEL_REPO_OWNER $ROTEL_REPO $ROTEL_RELEASE $ROTEL_FILE
 
-tar -O -zxf $ROTEL_FILE rotel > $CWD/../app/rotel/rotel-agent
+tar -O -zxf $ROTEL_FILE rotel > $CWD/../rotel/rotel/rotel-agent
 rm $ROTEL_FILE
 
 chmod +x $CWD/../app/rotel/rotel-agent
