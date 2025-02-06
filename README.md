@@ -1,2 +1,2 @@
 # pyrotel
-Python modules for Rust OpenTelemetry Collector
+Python module for the Streamfold Rust OpenTelemetry Collector
