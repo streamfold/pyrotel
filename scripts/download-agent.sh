@@ -4,8 +4,6 @@ CWD="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
 
 set -e
 
-ROTEL_ARCH="x86_64-unknown-linux-gnu"
-
 if [ -z "$ROTEL_RELEASE" ]; then
   echo "Must set ROTEL_RELEASE"
   exit 1
