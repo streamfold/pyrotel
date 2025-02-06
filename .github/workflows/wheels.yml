@@ -21,6 +21,7 @@ jobs:
 
       - name: Build wheels
         env:
+          GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: ""
           CIBW_BEFORE_BUILD: ROTEL_ARCH="aarch64-apple-darwin" ROTEL_RELEASE="vrender-alpha5" ./scripts/download-agent.sh 
         run: python -m cibuildwheel --output-dir wheelhouse
