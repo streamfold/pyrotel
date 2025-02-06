@@ -21,6 +21,7 @@ jobs:
 
       - name: Build wheels
         env:
+          CIBW_ARCHS: x86_64
           GITHUB_API_TOKEN: ${{ secrets.AGENT_DOWNLOAD_TOKEN }}
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: ""
           CIBW_BEFORE_BUILD: GITHUB_API_TOKEN=${{ secrets.AGENT_DOWNLOAD_TOKEN }} ROTEL_ARCH="x86_64-unknown-linux-gnu" ROTEL_RELEASE="vrender-alpha5" ./scripts/download-agent.sh 
