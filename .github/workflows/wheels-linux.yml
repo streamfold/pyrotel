@@ -21,7 +21,7 @@ jobs:
 
       - name: Build wheels
         env:
-          GITHUB_API_TOKEN: ${{ secrets.AGENT_DOWNLOAD_TOKEN }} 
+          GITHUB_API_TOKEN: ${{ secrets.AGENT_DOWNLOAD_TOKEN }}
           CIBW_BEFORE_BUILD: ROTEL_ARCH="x86_64-unknown-linux-gnu" ROTEL_RELEASE="vrender-alpha5" ./scripts/download-agent.sh 
         run: python -m cibuildwheel --output-dir wheelhouse
         # to supply options, put them in 'env', like:
