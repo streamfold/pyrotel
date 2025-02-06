@@ -1,0 +1,66 @@
+from __future__ import annotations
+
+import os
+import signal
+import subprocess
+import time
+from dataclasses import dataclass
+from pathlib import Path
+
+from .config import Config
+
+@dataclass
+class Agent:
+    pkg_path: Path = Path(__file__).parent
+    agent_path: Path = pkg_path / "rotel-agent"
+    running: bool = False
+    pid_file: str = None
+
+    def start(self, config: Config) -> None:
+        agent_env = config.build_agent_environment()
+
+        p = subprocess.Popen(
+            [self.agent_path, "start", "--daemon"],
+            env=agent_env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        p.wait(timeout=1)
+        retcode = p.returncode
+        if retcode != 0:
+            output, _ = p.communicate()
+            out = output.decode("utf-8")
+            print(f"Rotel agent is unable to start (return code: {retcode}): ", out)
+        else:
+            self.running = True
+            self.pid_file = config.options.get("pid_file")
+
+    def stop(self):
+        if self.running is False:
+            print(f"Rotel agent is not running")
+            return
+
+        # Could this be bad if the agent died and the PID was recycled?
+        # (alternatively could send a shutdown command over an RPC channel)
+        if self.pid_file is not None:
+            try:
+                with open(self.pid_file) as file:
+                    line = file.readline()
+                    pid = int(line)
+                    os.kill(pid, signal.SIGTERM)
+                    # wait up to 2.5secs for this exit
+                    time.sleep(0.5)
+                    for i in range(4):
+                        try:
+                            # is this portable?
+                            os.kill(pid, 0)
+                        except OSError:
+                            break
+                        else:
+                            time.sleep(0.5)
+            except ProcessLookupError:
+                pass # In multi-worker configs, the process may have already terminated
+            except FileNotFoundError:
+                print(f"Unable to locate agent pid file")
+
+agent = Agent()
