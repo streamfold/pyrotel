@@ -50,7 +50,7 @@ setup(
         "Programming Language :: Python :: 3.10",
     ],
     extras_require={
-        "dev": ["pytest>=7.0", "twine>=6.1.0"],
+        "dev": ["pytest>=7.0", "twine>=6.1.0", "pkginfo>=1.12.0" ],
     },
     package_data={
         'rotel': ['rotel-agent'],
