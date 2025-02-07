@@ -2,7 +2,6 @@
 before-all = "uname -a"
 
 [[tool.cibuildwheel.overrides]]
-select = "cp310-*"
 manylinux-x86_64-image = "manylinux1"
 
 [build-system]
