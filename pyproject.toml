@@ -9,3 +9,4 @@ build-backend = "setuptools.build_meta"
 name = "sf-pyrotel"
 version = "0.0.1"
 requires-python = ">=3.6"
+dynamic = ["description", "readme", "license", "authors", "classifiers", "optional-dependencies"]
