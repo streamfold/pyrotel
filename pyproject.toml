@@ -1,6 +1,6 @@
 [tool.cibuildwheel]
 before-all = "uname -a"
-manylinux-x86_64-image = "manylinux_2_27"
+manylinux-x86_64-image = "manylinux_2_27_x86_64"
 
 [build-system]
 requires = ["setuptools >= 74.0"]
