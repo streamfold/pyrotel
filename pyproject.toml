@@ -4,3 +4,6 @@ before-all = "uname -a"
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[project]
+requires-python = ">=3.6"
