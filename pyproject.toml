@@ -2,6 +2,7 @@
 before-all = "uname -a"
 
 [[tool.cibuildwheel.overrides]]
+select = "cp*"
 manylinux-x86_64-image = "manylinux1"
 
 [build-system]
