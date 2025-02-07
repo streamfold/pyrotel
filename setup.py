@@ -9,7 +9,7 @@ from wheel.metadata import pkginfo_to_metadata
 
 try:
     from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
-    from wheel.bdist_wheel import metadata.pkginfo_to_metadata
+    from wheel.metadata import pkginfo_to_metadata
     class MyWheel(_bdist_wheel):
 
         def finalize_options(self):
