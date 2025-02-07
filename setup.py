@@ -18,6 +18,7 @@ try:
         def __init__(self, *attrs):
             Distribution.__init__(self, *attrs)
             self.cmdclass['bdist_wheel'] = MyWheel
+            self.metadata.version = "2.2"
 
         def is_pure(self):
             return False
