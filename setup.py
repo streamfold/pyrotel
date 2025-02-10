@@ -117,7 +117,7 @@ except ImportError:
 
 setup(
     name="rotel",
-    version="0.0.6",
+    version="0.0.7",
     description="Rust OpenTelemetry collector",
     packages=find_packages(),
     long_description="Python modules for Streamfold's Rust OpenTelemetry Collector",
