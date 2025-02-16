@@ -1,8 +1,6 @@
 import os
 from runpy import run_path
 
-from pre_commit.clientlib import InvalidConfigError
-
 from .client import Client as Rotel
 from .config import Config
 
@@ -41,3 +39,6 @@ def stop() -> None:
     cl = Rotel.get()
     if cl is not None:
         cl.stop()
+
+class InvalidConfigError(Exception):
+    pass
