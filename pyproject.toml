@@ -1,12 +1,56 @@
-[tool.cibuildwheel]
-before-all = "uname -a"
-
 [build-system]
-requires = ["setuptools >= 74.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "rotel"
-version = "0.0.7"
+dynamic = ["version"]
+description = "Rust OpenTelemetry collector"
+readme = "README.md"
 requires-python = ">=3.8"
-dynamic = ["description", "readme", "license", "authors", "classifiers", "optional-dependencies"]
+keywords = []
+authors = [
+    { name = "Ray Jenkins", email = "ray@streamfold.com" },
+    { name = "Mike Heffner", email = "mike@streamfold.com" },
+]
+classifiers = [
+    # Python versions
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pkginfo>=1.12.0",
+    "pytest>=7.0",
+    "twine>=6.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/streamfold/pyrotel"
+
+[tool.hatch.version]
+path = "src/rotel/__about__.py"
+
+[tool.hatch.build]
+sources = ["src"]
+exclude = ["scripts", "tests", "conftest.py"]
+artifacts = [
+    "src/rotel/rotel-agent",
+]
+
+[tool.hatch.envs.build.scripts]
+all = "python scripts/build_all.py"
+me = "_ROTEL_AGENT_PATH=\"{args}\" hatch build -t wheel"
+for = "_ROTEL_AGENT_ARCH=\"{args}\" hatch build -t wheel"
+
+[tool.hatch.build.targets.wheel.hooks.custom]
+path = "scripts/build_hook.py"
+
+[tool.cibuildwheel]
+before-all = "uname -a"
+
