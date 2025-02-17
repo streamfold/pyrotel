@@ -4,11 +4,16 @@ import stat
 import subprocess
 import sysconfig
 
+from runpy import run_path
 from typing import Any
 
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
-from scripts.platform import PLATFORM_TAGS, PLATFORM_FILE_ARCH
+def run_relative(filename: str) -> dict[str, Any]:
+    return run_path(os.path.join(os.path.dirname(os.path.abspath(__file__)), filename))
+
+PLATFORM_TAGS = run_relative("platform.py")["PLATFORM_TAGS"]
+PLATFORM_FILE_ARCH = run_relative("platform.py")["PLATFORM_FILE_ARCH"]
 
 ROTEL_RELEASE="vrender-alpha5"
 
