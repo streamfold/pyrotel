@@ -59,3 +59,12 @@ for = "_ROTEL_AGENT_ARCH=\"{args}\" hatch build -t wheel"
 [tool.hatch.build.targets.wheel.hooks.custom]
 path = "scripts/build_hook.py"
 
+[tool.hatch.envs.default]
+dependencies = [
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+]
+
+[[tool.hatch.envs.test.matrix]]
+python = ["38", "39", "310", "311", "312", "313"]
