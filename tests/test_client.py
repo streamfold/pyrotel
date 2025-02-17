@@ -1,3 +1,5 @@
+import os
+
 import rotel
 
 from opentelemetry import trace
@@ -7,7 +9,12 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor
 
 def test_client_active():
+    print(f"running test")
     rotel.start()
+
+    for k, v in os.environ.items():
+        if k.startswith("OTEL"):
+            print(f"env {k}={v}")
 
     provider = new_provider()
     trace.set_tracer_provider(provider)
