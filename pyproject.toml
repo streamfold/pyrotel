@@ -51,6 +51,3 @@ for = "_ROTEL_AGENT_ARCH=\"{args}\" hatch build -t wheel"
 [tool.hatch.build.targets.wheel.hooks.custom]
 path = "scripts/build_hook.py"
 
-[tool.cibuildwheel]
-before-all = "uname -a"
-
