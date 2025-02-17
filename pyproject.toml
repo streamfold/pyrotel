@@ -47,6 +47,16 @@ artifacts = [
 
 [tool.hatch.envs.default]
 installer = "uv"
+dependencies = [
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+
+    "opentelemetry-api",
+    "opentelemetry-sdk",
+    "opentelemetry-exporter-otlp-proto-http",
+    "opentelemetry-exporter-otlp-proto-grpc",
+]
 
 [tool.hatch.envs.build]
 installer = "uv"
@@ -59,3 +69,10 @@ for = "_ROTEL_AGENT_ARCH=\"{args}\" hatch build -t wheel"
 [tool.hatch.build.targets.wheel.hooks.custom]
 path = "scripts/build_hook.py"
 
+[tool.pytest.ini_options]
+pythonpath = [
+    "src"
+]
+
+[[tool.hatch.envs.test.matrix]]
+python = ["38", "39", "310", "311", "312", "313"]

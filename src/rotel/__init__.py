@@ -31,8 +31,8 @@ def start() -> None:
     cl = _must_initialize_client()
 
     # TODO: set these conditionally
-    os.environ["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] = "http://localhost:4317"
-    os.environ["OTEL_EXPORTER_OTLP_TRACES_PROTOCOL"] = "grpc"
+    os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = "127.0.0.1:4317"
+    os.environ["OTEL_EXPORTER_OTLP_PROTOCOL"] = "grpc"
     cl.start()
 
 def stop() -> None:
