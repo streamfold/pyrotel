@@ -39,9 +39,17 @@ path = "src/rotel/__about__.py"
 [tool.hatch.build]
 sources = ["src"]
 exclude = ["scripts", "tests", "conftest.py"]
+
+[tool.hatch.build.targets.wheel]
 artifacts = [
     "src/rotel/rotel-agent",
 ]
+
+[tool.hatch.envs.default]
+installer = "uv"
+
+[tool.hatch.envs.build]
+installer = "uv"
 
 [tool.hatch.envs.build.scripts]
 all = "python scripts/build_all.py"
