@@ -1,0 +1,28 @@
+name: Build/Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build_and_release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        # what should we build on?
+        python-version: "3.9"
+
+      - name: Install Hatch
+        run: pipx install hatch
+
+      - name: Build all wheels
+        env:
+          GITHUB_API_TOKEN: ${{ secrets.AGENT_DOWNLOAD_TOKEN }}
+        run: hatch run build:all
+
+      - name: Publish
+        run: hatch publish
