@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from typing import Unpack
+try:
+    from typing import Unpack
+except ImportError:
+    from typing_extensions import Unpack
 
 from .config import Options, Config
 from .agent import agent
