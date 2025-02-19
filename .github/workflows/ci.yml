@@ -25,6 +25,10 @@ jobs:
       - name: Run tests
         run: hatch run test:pytest
 
+      - name: Dump rotel agent logs on failure
+        if: ${{ failure() }}
+        run: tail -n 15 /tmp/rotel-agent.log
+
 #  lint:
 #    runs-on: ubuntu-latest
 #
