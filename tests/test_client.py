@@ -3,7 +3,9 @@ from __future__ import annotations
 import os
 
 import pytest
-import rotel
+
+from src.rotel.config import Options, OTLPExporter
+from src.rotel.client import Client
 
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter as OTLPGRPCSpanExporter, Compression
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter as OTLPHTTPSpanExporter, Compression
@@ -12,17 +14,19 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 
 from tests.utils import wait_until
-from tests.utils_server import new_server, MockServer
+from tests.utils_server import mock_server, MockServer
 
-def test_client_connect_http():
-    srv = new_server()
-    addr = srv.address()
+def test_client_connect_http(mock_server):
+    addr = mock_server.address()
 
-    # TODO: these will be set with exporter configuration
-    os.environ["ROTEL_OTLP_EXPORTER_ENDPOINT"] = f"http://{addr[0]}:{addr[1]}"
-    os.environ["ROTEL_OTLP_EXPORTER_PROTOCOL"] = f"http"
-
-    rotel.start()
+    client = Client(
+        enabled = True,
+        exporter = OTLPExporter(
+            endpoint = f"http://{addr[0]}:{addr[1]}",
+            protocol = "http"
+        )
+    )
+    client.start()
 
     os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = "http://localhost:4318"
     os.environ["OTEL_EXPORTER_OTLP_PROTOCOL"] = "http"
@@ -35,19 +39,20 @@ def test_client_connect_http():
     provider.shutdown()
 
     wait_until(2, 0.1, lambda: MockServer.tracker.get_count() > 0)
-    srv.stop()
 
     assert MockServer.tracker.get_count() == 1
 
-def test_client_connect_grpc():
-    srv = new_server()
-    addr = srv.address()
+def test_client_connect_grpc(mock_server):
+    addr = mock_server.address()
 
-    # TODO: these will be set with exporter configuration
-    os.environ["ROTEL_OTLP_EXPORTER_ENDPOINT"] = f"http://{addr[0]}:{addr[1]}"
-    os.environ["ROTEL_OTLP_EXPORTER_PROTOCOL"] = f"http"
-
-    rotel.start()
+    client = Client(
+        enabled = True,
+        exporter = OTLPExporter(
+            endpoint = f"http://{addr[0]}:{addr[1]}",
+            protocol = "http"
+        )
+    )
+    client.start()
 
     provider = new_grpc_provider()
     tracer = new_tracer(provider, "pyrotel.test")
@@ -57,8 +62,6 @@ def test_client_connect_grpc():
 
     provider.shutdown()
     wait_until(2, 0.1, lambda: MockServer.tracker.get_count() > 0)
-
-    srv.stop()
 
     assert MockServer.tracker.get_count() == 1
 

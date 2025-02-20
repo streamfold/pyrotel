@@ -15,35 +15,40 @@ class OTLPExporter(TypedDict, total=False):
     tls_ca_file: str | None
     tls_skip_verify: bool | None
 
-
 class Options(TypedDict, total=False):
+    enabled: bool | None
     otlp_grpc_port: str | int | None
     otlp_http_port: str | int | None
     pid_file: str | None
     log_file: str | None
     exporter: OTLPExporter | None
 
-
-
 class Config:
     DEFAULT_OPTIONS = Options(
-        otlp_grpc_port=4317,
-        otlp_http_port=4318,
-        pid_file="/tmp/rotel-agent.pid",
-        log_file="/tmp/rotel-agent.log",
+        enabled = False,
+        otlp_grpc_port = 4317,
+        otlp_http_port = 4318,
+        pid_file = "/tmp/rotel-agent.pid",
+        log_file = "/tmp/rotel-agent.log",
     )
 
     def __init__(self, options: Options | None = None):
-        opts = self.DEFAULT_OPTIONS
+        opts = Options()
+        opts.update(self.DEFAULT_OPTIONS)
         opts.update(Config.load_options_from_env())
         if options is not None:
             opts.update(env_sub_opts(options))
 
         self.options = opts
+        self.valid = self.validate()
+
+    def is_active(self) -> bool:
+        return self.options["enabled"] and self.valid
 
     @staticmethod
     def load_options_from_env() -> Options:
         env = Options(
+            enabled = as_bool(rotel_env("ENABLED")),
             otlp_grpc_port = rotel_env("OTLP_GRPC_PORT"),
             otlp_http_port = rotel_env("OTLP_HTTP_PORT"),
             pid_file = rotel_env("PID_FILE"),
@@ -103,6 +108,19 @@ class Config:
                 spawn_env[rotel_key] = str(value)
 
         return spawn_env
+
+    # Perform some minimal validation for now, we can expand this as needed
+    def validate(self) -> bool | None:
+        if not self.options["enabled"]:
+            return None
+
+        exporter = self.options["exporter"]
+        if exporter is not None:
+            protocol = exporter.get("protocol")
+            if protocol is not None and protocol not in {'grpc', 'http'}:
+                return False
+        return True
+
 
 def as_lower(value: str | None) -> str | None:
     if value is not None:
