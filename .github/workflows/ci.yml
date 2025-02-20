@@ -1,9 +1,9 @@
 name: CI
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
-  build_and_release:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,8 +17,17 @@ jobs:
       - name: Install Hatch
         run: pipx install hatch
 
+      - name: Build
+        env:
+          GITHUB_API_TOKEN: ${{ secrets.AGENT_DOWNLOAD_TOKEN }}
+        run: hatch run build:me
+
       - name: Run tests
         run: hatch run test:pytest
+
+      - name: Dump rotel agent logs on failure
+        if: ${{ failure() }}
+        run: tail -n 15 /tmp/rotel-agent.log
 
 #  lint:
 #    runs-on: ubuntu-latest

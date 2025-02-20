@@ -34,6 +34,9 @@ class Agent:
         else:
             self.running = True
             self.pid_file = config.options.get("pid_file")
+            # XXX: this can race between binding the ports, we should bind ports
+            # earlier to avoid the race condition here
+            time.sleep(0.10)
 
     def stop(self):
         if self.running is False:
@@ -48,8 +51,8 @@ class Agent:
                     line = file.readline()
                     pid = int(line)
                     os.kill(pid, signal.SIGTERM)
-                    # wait up to 2.5secs for this exit
-                    time.sleep(0.5)
+                    # wait up to 2.25 secs for this exit
+                    time.sleep(0.25)
                     for i in range(4):
                         try:
                             # is this portable?
