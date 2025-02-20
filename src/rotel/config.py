@@ -83,19 +83,17 @@ class Config:
         }
         exporter = opts.get("exporter") 
         if exporter is not None:
-            exporter_type = exporter.get("exporter_type")
-            if exporter_type is None or exporter_type == "otlp":
-                pfx = "OTLP_EXPORTER_"
-                updates.update({
-                    pfx + "ENDPOINT": exporter.get("endpoint"),
-                    pfx + "PROTOCOL": exporter.get("protocol"),
-                    pfx + "CUSTOM_HEADERS": exporter.get("custom_headers"),
-                    pfx + "COMPRESSION": exporter.get("compression"),
-                    pfx + "TLS_CERT_FILE": exporter.get("tls_cert_file"),
-                    pfx + "TLS_KEY_FILE": exporter.get("tls_key_file"),
-                    pfx + "TLS_CA_FILE": exporter.get("tls_ca_file"),
-                    pfx + "TLS_SKIP_VERIFY": exporter.get("tls_skip_verify"),
-                })
+            pfx = "OTLP_EXPORTER_"
+            updates.update({
+                pfx + "ENDPOINT": exporter.get("endpoint"),
+                pfx + "PROTOCOL": exporter.get("protocol"),
+                pfx + "CUSTOM_HEADERS": exporter.get("custom_headers"),
+                pfx + "COMPRESSION": exporter.get("compression"),
+                pfx + "TLS_CERT_FILE": exporter.get("tls_cert_file"),
+                pfx + "TLS_KEY_FILE": exporter.get("tls_key_file"),
+                pfx + "TLS_CA_FILE": exporter.get("tls_ca_file"),
+                pfx + "TLS_SKIP_VERIFY": exporter.get("tls_skip_verify"),
+            })
 
         for key, value in updates.items():
             if value is not None:

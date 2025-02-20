@@ -32,7 +32,6 @@ def test_config_env_basic():
     cfg = Config()
 
     assert cfg.options["otlp_grpc_port"] == "5317"
-    assert cfg.options["exporter"].get("exporter_type") is None
     assert cfg.options["exporter"]["endpoint"] == "http://foo.example.com:4317"
     assert cfg.options["exporter"]["custom_headers"] == list(["api=1234", "team=8793"])
     assert cfg.options["exporter"]["tls_skip_verify"] == True
