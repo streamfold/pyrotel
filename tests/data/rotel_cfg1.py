@@ -1,5 +1,3 @@
-import os
-
 from rotel import Rotel, OTLPExporter
 
 rotel = Rotel(
