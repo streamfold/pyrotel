@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+import pytest
 
 from http.server import HTTPServer, BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -33,24 +34,37 @@ class MockServer(BaseHTTPRequestHandler):
         self.end_headers()
 
 class MockServerHandle:
-    def __init__(self, server: HTTPServer, thr: threading.Thread):
+    def __init__(self, server: HTTPServer):
+        self.thr = None
         self.server = server
+
+    def with_thr(self, thr: threading.Thread):
         self.thr = thr
 
     def address(self):
         return self.server.server_address
 
     def stop(self):
-        self.server.shutdown()
+        if self.server is not None:
+            self.server.shutdown()
+            self.server = None
         self.thr.join(1)
 
-def new_server() -> MockServerHandle:
+@pytest.fixture
+def mock_server():
     httpd = HTTPServer(('localhost', 0), MockServer)
-    thr = threading.Thread(target=run_server, args=(httpd,))
+    handle = MockServerHandle(httpd)
+    thr = threading.Thread(target=run_server, args=(handle,))
     thr.start()
+    handle.with_thr(thr)
 
-    return MockServerHandle(httpd, thr)
+    yield handle
 
-def run_server(srv: HTTPServer):
-    srv.serve_forever()
+    handle.stop()
+
+def run_server(hnd: MockServerHandle):
+    address = hnd.address()
+    hnd.server.serve_forever()
+    # if we exit early we may end up blocking on shutdown
+    hnd.server = None
 
