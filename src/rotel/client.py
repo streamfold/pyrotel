@@ -22,7 +22,9 @@ class Client:
         return _client
 
     def start(self):
-        agent.start(self.config)
+        if self.config.is_active():
+            agent.start(self.config)
 
     def stop(self):
-        agent.stop()
+        if self.config.is_active():
+            agent.stop()

@@ -4,7 +4,7 @@ import os
 from runpy import run_path
 
 from .client import Client as Rotel
-from .config import Config
+from .config import Config, OTLPExporter
 
 def _client_with_config() -> Rotel:
     # todo: load additional configuration?
