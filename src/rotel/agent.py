@@ -34,9 +34,6 @@ class Agent:
         else:
             self.running = True
             self.pid_file = config.options.get("pid_file")
-            # XXX: this can race between binding the ports, we should bind ports
-            # earlier to avoid the race condition here
-            time.sleep(0.10)
 
     def stop(self):
         if self.running is False:
