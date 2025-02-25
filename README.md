@@ -1,5 +1,37 @@
 # pyrotel
-Python module for the Streamfold Rust OpenTelemetry Collector
+Python module for the Rotel integrated high performance Open Telemetry collector.
+
+# Usage
+
+Add the `rotel` Python module to your project's dependencies and put the following file in your
+project's root directory.
+
+`__rotel__.py`:
+```python
+from rotel import Rotel, OTLPExporter
+
+rotel = Rotel(
+    exporter = OTLPExporter(
+        endpoint="{ROTEL_ENDPOINT}",
+    ),
+)
+```
+
+In your `main.py`, add the following to load the Rotel agent:
+```python
+import rotel
+rotel.start()
+```
+
+In your deployment configuration, add the following environment variables to configure Rotel:
+* `ROTEL_ENABLED=true`
+* `ROTEL_ENDPOINT=https://foo.example.com` (match to your provider's API endpoint)
+
+To configure the OpenTelemetry SDK, point the exporter configuration to the localhost Rotel agent. Adjust these depending on whether you are using the grpc or http exporter in your code.
+* `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317`
+* `OTEL_EXPORTER_OTLP_PROTOCOL=grpc`
+
+See the configuration documentation for more configuration options.
 
 # Development
 
