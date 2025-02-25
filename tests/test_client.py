@@ -4,7 +4,8 @@ import os
 
 import pytest
 
-from src.rotel.config import Options, OTLPExporter
+from src.rotel.agent import agent
+from src.rotel.config import Options, OTLPExporter, Config
 from src.rotel.client import Client
 
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter as OTLPGRPCSpanExporter, Compression
@@ -64,6 +65,26 @@ def test_client_connect_grpc(mock_server):
     wait_until(2, 0.1, lambda: MockServer.tracker.get_count() > 0)
 
     assert MockServer.tracker.get_count() == 1
+
+def test_client_double_start(mock_server):
+    addr = mock_server.address()
+
+    opts = Options(
+        enabled = True,
+        exporter = OTLPExporter(
+            endpoint = f"http://{addr[0]}:{addr[1]}",
+            protocol = "http"
+        )
+    )
+    cfg = Config(opts)
+
+    res = agent.start(cfg)
+    assert res == True
+
+    # This should ignore the error of binding on an existing port, since we check
+    # the pid FILE.
+    res2 = agent.start(cfg)
+    assert res2 == True
 
 def new_grpc_provider() -> TracerProvider:
     return new_provider(OTLPGRPCSpanExporter(timeout=5, endpoint="http://localhost:4317", insecure=True))

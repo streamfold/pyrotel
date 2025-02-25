@@ -16,7 +16,7 @@ class Agent:
     running: bool = False
     pid_file: str = None
 
-    def start(self, config: Config) -> None:
+    def start(self, config: Config) -> bool:
         agent_env = config.build_agent_environment()
 
         p = subprocess.Popen(
@@ -25,15 +25,22 @@ class Agent:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        p.wait(timeout=1)
-        retcode = p.returncode
-        if retcode != 0:
-            output, _ = p.communicate()
-            out = output.decode("utf-8")
-            print(f"Rotel agent is unable to start (return code: {retcode}): ", out)
+        try:
+            outs, errs = p.communicate(timeout=1)
+        except subprocess.TimeoutExpired:
+            p.kill()
+            outs, errs = p.communicate()
+        ret_code = p.returncode
+        if ret_code != 0:
+            out = outs.decode("utf-8").strip()
+            err = errs.decode("utf-8").strip()
+            out = " - ".join(filter(None, [out, err]))
+            print(f"Rotel agent is unable to start (return code: {ret_code}): {out}")
+            return False
         else:
             self.running = True
             self.pid_file = config.options.get("pid_file")
+            return True
 
     def stop(self):
         if self.running is False:
