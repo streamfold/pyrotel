@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "rotel"
 dynamic = ["version"]
-description = "Rust OpenTelemetry collector"
+description = "Integrated high performance Open Telemetry collector"
 readme = "README.md"
 requires-python = ">=3.8"
 keywords = []
@@ -21,6 +21,8 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    # Application status
+    "Development Status :: 3 - Alpha",
 ]
 dependencies = [
     "typing-extensions"
@@ -35,6 +37,8 @@ dev = [
 
 [project.urls]
 Homepage = "https://github.com/streamfold/pyrotel"
+Issues = "https://github.com/streamfold/pyrotel/issues"
+Source = "https://github.com/streamfold/pyrotel"
 
 [tool.hatch.version]
 path = "src/rotel/__about__.py"

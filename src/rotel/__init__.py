@@ -31,10 +31,6 @@ def _must_initialize_client() -> Rotel:
 
 def start() -> None:
     cl = _must_initialize_client()
-
-    # TODO: set these conditionally
-    os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = "http://localhost:4317"
-    os.environ["OTEL_EXPORTER_OTLP_PROTOCOL"] = "grpc"
     cl.start()
 
 def stop() -> None:
