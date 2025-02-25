@@ -25,7 +25,7 @@ rotel.start()
 
 In your deployment configuration, add the following environment variables to configure Rotel:
 * `ROTEL_ENABLED=true`
-* `ROTEL_ENDPOINT=https://api.honeycomb.com` (or whatever endpoint your provider requires)
+* `ROTEL_ENDPOINT=https://foo.example.com` (match to your provider's API endpoint)
 
 To configure the OpenTelemetry SDK, point the exporter configuration to the localhost Rotel agent. Adjust these depending on whether you are using the grpc or http exporter in your code.
 * `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317`
