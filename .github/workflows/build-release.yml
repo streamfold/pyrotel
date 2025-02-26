@@ -9,6 +9,10 @@ jobs:
   build_and_release:
     runs-on: ubuntu-latest
 
+    environment: pypi
+    permissions:
+      id-token: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -25,5 +29,5 @@ jobs:
           GITHUB_API_TOKEN: ${{ secrets.AGENT_DOWNLOAD_TOKEN }}
         run: hatch run build:all
 
-      - name: Publish
-        run: hatch publish
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
