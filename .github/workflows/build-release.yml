@@ -6,12 +6,8 @@ on:
       - "v*"
 
 jobs:
-  build_and_release:
+  build_wheels:
     runs-on: ubuntu-latest
-
-    environment: pypi
-    permissions:
-      id-token: write
 
     steps:
       - uses: actions/checkout@v4
@@ -29,5 +25,26 @@ jobs:
           GITHUB_API_TOKEN: ${{ secrets.AGENT_DOWNLOAD_TOKEN }}
         run: hatch run build:all
 
-      - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pyrotel-wheels
+          path: ./dist/*.whl
+
+  publish:
+    needs: [build_wheels]
+    runs-on: ubuntu-latest
+
+    environment: pypi
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: pyrotel-wheels
+          path: dist
+          merge-multiple: true
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          verify-metadata: false
