@@ -1,6 +1,9 @@
 # pyrotel
 Python module for the Rotel integrated high performance Open Telemetry collector.
 
+[![PyPI - Version](https://img.shields.io/pypi/v/rotel.svg)](https://pypi.org/project/rotel)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/rotel.svg)](https://pypi.org/project/rotel)
+
 # Usage
 
 Add the `rotel` Python module to your project's dependencies and put the following file in your
