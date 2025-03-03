@@ -17,8 +17,8 @@ class OTLPExporter(TypedDict, total=False):
 
 class Options(TypedDict, total=False):
     enabled: bool | None
-    otlp_grpc_port: str | int | None
-    otlp_http_port: str | int | None
+    otlp_grpc_endpoint: str | None
+    otlp_http_endpoint: str | None
     pid_file: str | None
     log_file: str | None
     exporter: OTLPExporter | None
@@ -26,8 +26,8 @@ class Options(TypedDict, total=False):
 class Config:
     DEFAULT_OPTIONS = Options(
         enabled = False,
-        otlp_grpc_port = 4317,
-        otlp_http_port = 4318,
+        otlp_grpc_endpoint = "localhost:4317",
+        otlp_http_endpoint = "localhost:4318",
         pid_file = "/tmp/rotel-agent.pid",
         log_file = "/tmp/rotel-agent.log",
     )
@@ -49,8 +49,8 @@ class Config:
     def load_options_from_env() -> Options:
         env = Options(
             enabled = as_bool(rotel_env("ENABLED")),
-            otlp_grpc_port = rotel_env("OTLP_GRPC_PORT"),
-            otlp_http_port = rotel_env("OTLP_HTTP_PORT"),
+            otlp_grpc_endpoint = rotel_env("OTLP_GRPC_ENDPOINT"),
+            otlp_http_endpoint = rotel_env("OTLP_HTTP_ENDPOINT"),
             pid_file = rotel_env("PID_FILE"),
             log_file = rotel_env("LOG_FILE"),
         )
@@ -81,8 +81,8 @@ class Config:
 
         spawn_env = os.environ.copy()
         updates = {
-            "OTLP_GRPC_PORT": opts.get("otlp_grpc_port"),
-            "OTLP_HTTP_PORT": opts.get("otlp_http_port"),
+            "OTLP_GRPC_ENDPOINT": opts.get("otlp_grpc_endpoint"),
+            "OTLP_HTTP_ENDPOINT": opts.get("otlp_http_endpoint"),
             "PID_FILE": opts.get("pid_file"),
             "LOG_FILE": opts.get("log_file"),
         }

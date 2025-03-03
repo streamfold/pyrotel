@@ -2,7 +2,7 @@ from rotel import Rotel, OTLPExporter
 
 rotel = Rotel(
     enabled = True,
-    otlp_grpc_port = 5317,
+    otlp_grpc_endpoint = "localhost:5317",
     exporter = OTLPExporter(
         endpoint = "http://{OTLP_API}:4317",
         compression = "gzip",
