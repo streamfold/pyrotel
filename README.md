@@ -1,5 +1,5 @@
 # pyrotel
-Python package for the Rotel lightweight Open Telemetry collector.
+Python package for the Rotel lightweight OpenTelemetry collector.
 
 [![PyPI - Version](https://img.shields.io/pypi/v/rotel.svg)](https://pypi.org/project/rotel)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/rotel.svg)](https://pypi.org/project/rotel)
