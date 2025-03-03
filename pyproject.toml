@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "rotel"
 dynamic = ["version"]
-description = "Integrated high performance Open Telemetry collector"
+description = "Lightweight Open Telemetry collector"
 readme = "README.md"
 requires-python = ">=3.8"
 keywords = []
