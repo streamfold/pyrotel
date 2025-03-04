@@ -79,3 +79,11 @@ Finally, to build for all supported platforms:
 ```shell
 GITHUB_API_TOKEN=1234 hatch run build:all
 ```
+
+### Linting and formatting
+
+```shell
+hatch run lint:fmt    # will fix anything it can, report others
+hatch run lint:check  # will only report issues
+```
+
