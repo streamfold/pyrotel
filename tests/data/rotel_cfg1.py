@@ -1,4 +1,5 @@
-from rotel import Rotel, OTLPExporter
+from rotel import OTLPExporter, Rotel
+
 
 rotel = Rotel(
     enabled = True,

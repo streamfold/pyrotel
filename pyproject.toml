@@ -83,3 +83,26 @@ pythonpath = [
 
 [[tool.hatch.envs.test.matrix]]
 python = ["38", "39", "310", "311", "312", "313"]
+
+[tool.hatch.envs.lint]
+detached = true
+dependencies = [
+    "isort",
+    "ruff",
+]
+
+[tool.hatch.envs.lint.scripts]
+check = [
+    "isort --check .",
+    "ruff check ."
+]
+fmt = [
+    "isort .",
+    "ruff check --fix ."
+]
+
+[tool.isort]
+lines_after_imports = 2
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/test_*.py" = ["F811"] # ruff does not like pytest fixtures

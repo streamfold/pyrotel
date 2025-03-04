@@ -2,20 +2,27 @@ from __future__ import annotations
 
 import os
 
-import pytest
-
-from src.rotel.agent import agent
-from src.rotel.config import Options, OTLPExporter, Config
-from src.rotel.client import Client
-
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter as OTLPGRPCSpanExporter, Compression
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter as OTLPHTTPSpanExporter, Compression
-from opentelemetry.sdk.resources import DEPLOYMENT_ENVIRONMENT, SERVICE_NAME, Resource
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
+    OTLPSpanExporter as OTLPGRPCSpanExporter
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import Compression
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import \
+    OTLPSpanExporter as OTLPHTTPSpanExporter
+from opentelemetry.sdk.resources import (DEPLOYMENT_ENVIRONMENT, SERVICE_NAME,
+                                         Resource)
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 
+from src.rotel.agent import agent
+from src.rotel.client import Client
+from src.rotel.config import Config, Options, OTLPExporter
 from tests.utils import wait_until
-from tests.utils_server import mock_server, MockServer
+from tests.utils_server import MockServer
+
+
+# isort: off
+from tests.utils_server import mock_server # noqa: F401
+# isort: on
+
 
 def test_client_connect_http(mock_server):
     addr = mock_server.address()
@@ -35,7 +42,7 @@ def test_client_connect_http(mock_server):
     provider = new_http_provider()
     tracer = new_tracer(provider, "pyrotel.test")
 
-    with tracer.start_as_current_span("test_client_active") as span:
+    with tracer.start_as_current_span("test_client_active"):
         pass
     provider.shutdown()
 
@@ -58,7 +65,7 @@ def test_client_connect_grpc(mock_server):
     provider = new_grpc_provider()
     tracer = new_tracer(provider, "pyrotel.test")
 
-    with tracer.start_as_current_span("test_client_active") as span:
+    with tracer.start_as_current_span("test_client_active"):
         pass
 
     provider.shutdown()
@@ -79,12 +86,12 @@ def test_client_double_start(mock_server):
     cfg = Config(opts)
 
     res = agent.start(cfg)
-    assert res == True
+    assert res
 
     # This should ignore the error of binding on an existing port, since we check
     # the pid FILE.
     res2 = agent.start(cfg)
-    assert res2 == True
+    assert res2
 
 def new_grpc_provider() -> TracerProvider:
     return new_provider(OTLPGRPCSpanExporter(timeout=5, endpoint="http://localhost:4317", insecure=True))

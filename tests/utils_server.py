@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
 import pytest
 
-from http.server import HTTPServer, BaseHTTPRequestHandler, ThreadingHTTPServer
 
 class RequestTracker:
     def __init__(self):
@@ -63,7 +64,6 @@ def mock_server():
     handle.stop()
 
 def run_server(hnd: MockServerHandle):
-    address = hnd.address()
     hnd.server.serve_forever()
     # if we exit early we may end up blocking on shutdown
     hnd.server = None

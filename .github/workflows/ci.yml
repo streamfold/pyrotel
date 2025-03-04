@@ -29,18 +29,16 @@ jobs:
         if: ${{ failure() }}
         run: tail -n 15 /tmp/rotel-agent.log
 
-#  lint:
-#    runs-on: ubuntu-latest
-#
-#    steps:
-#      - uses: actions/checkout@v4
-#
-#      - uses: actions/setup-python@v5
-#        # TODO: matrix test
-#        python-version: "3.9"
-#
-#      - name: Install Hatch
-#        run: pipx install hatch
-#
-#      - name: Run tests
-#        run: hatch run lint:all
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        python-version: "3.12"
+
+      - name: Install Hatch
+        run: pipx install hatch
+
+      - name: Run tests
+        run: hatch run lint:check
