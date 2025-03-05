@@ -6,8 +6,8 @@ from typing import Any
 import pytest
 
 from rotel import Config
-
 from tests.utils_server import MockServer
+
 
 PID_FILE = "/tmp/rotel-agent.pid"
 

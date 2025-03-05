@@ -21,6 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     # Application status
     "Development Status :: 3 - Alpha",
 ]
@@ -83,3 +84,27 @@ pythonpath = [
 
 [[tool.hatch.envs.test.matrix]]
 python = ["38", "39", "310", "311", "312", "313"]
+
+[tool.hatch.envs.lint]
+detached = true
+dependencies = [
+    "isort",
+    "ruff",
+]
+
+[tool.hatch.envs.lint.scripts]
+check = [
+    "isort --check .",
+    "ruff check ."
+]
+fmt = [
+    "isort .",
+    "ruff check --fix ."
+]
+
+[tool.isort]
+profile = "black"
+lines_after_imports = 2
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/test_*.py" = ["F811"] # ruff does not like pytest fixtures

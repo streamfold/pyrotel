@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+
 try:
     from typing import Unpack
 except ImportError:
     from typing_extensions import Unpack
 
-from .config import Options, Config
 from .agent import agent
+from .config import Config, Options
+
 
 _client: Client | None = None
 

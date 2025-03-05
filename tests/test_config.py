@@ -3,15 +3,14 @@ from __future__ import annotations
 import os
 from runpy import run_path
 
-import pytest
-
 from rotel.client import Client as Rotel
 from src.rotel.config import Config, Options, OTLPExporter
+
 
 def test_defaults():
     cfg = Config()
 
-    assert cfg.is_active() == False
+    assert not cfg.is_active()
     assert cfg.options["otlp_grpc_endpoint"] == "localhost:4317"
     assert cfg.options["otlp_http_endpoint"] == "localhost:4318"
 
@@ -30,11 +29,11 @@ def test_config_env_basic():
 
     cfg = Config()
 
-    assert cfg.is_active() == True
+    assert cfg.is_active()
     assert cfg.options["otlp_grpc_endpoint"] == "localhost:5317"
     assert cfg.options["exporter"]["endpoint"] == "http://foo.example.com:4317"
     assert cfg.options["exporter"]["custom_headers"] == list(["api=1234", "team=8793"])
-    assert cfg.options["exporter"]["tls_skip_verify"] == True
+    assert cfg.options["exporter"]["tls_skip_verify"]
 
     agent = cfg.build_agent_environment()
     assert agent["ROTEL_OTLP_GRPC_ENDPOINT"] == "localhost:5317"
@@ -53,7 +52,7 @@ def test_config_from_file():
     cl = run_path(cfg1_path)["rotel"]
     assert isinstance(cl, Rotel)
 
-    assert cl.config.is_active() == True
+    assert cl.config.is_active()
     assert cl.config.options["otlp_grpc_endpoint"] == "localhost:5317"
 
     exporter = cl.config.options["exporter"]
@@ -70,12 +69,12 @@ def test_config_validation():
     cfg = Config(Options(
         otlp_grpc_endpoint = "localhost:4317"
     ))
-    assert cfg.is_active() == False
+    assert not cfg.is_active()
 
     cfg = Config(Options(
         enabled = True
     ))
-    assert cfg.is_active() == True
+    assert cfg.is_active()
 
     cfg = Config(Options(
         enabled = True,
@@ -84,7 +83,7 @@ def test_config_validation():
             protocol = "grpc"
         )
     ))
-    assert cfg.is_active() == True
+    assert cfg.is_active()
 
     cfg = Config(Options(
         enabled = True,
@@ -93,4 +92,4 @@ def test_config_validation():
             protocol = "unknown"
         )
     ))
-    assert cfg.is_active() == False
+    assert not cfg.is_active()

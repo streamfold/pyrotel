@@ -4,7 +4,13 @@ on: [push]
 
 jobs:
   test:
+    name: Test Python ${{ matrix.python-version }}
+
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v4
@@ -12,7 +18,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           # TODO: matrix test?
-          python-version: "3.9"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install Hatch
         run: pipx install hatch
@@ -23,24 +29,25 @@ jobs:
         run: hatch run build:me
 
       - name: Run tests
-        run: hatch run test:pytest
+        run: |
+          PYTHON_ENV=$(echo ${{ matrix.python-version }} | sed -e 's/\.//')
+          hatch run test.py${PYTHON_ENV}:pytest
 
       - name: Dump rotel agent logs on failure
         if: ${{ failure() }}
         run: tail -n 15 /tmp/rotel-agent.log
 
-#  lint:
-#    runs-on: ubuntu-latest
-#
-#    steps:
-#      - uses: actions/checkout@v4
-#
-#      - uses: actions/setup-python@v5
-#        # TODO: matrix test
-#        python-version: "3.9"
-#
-#      - name: Install Hatch
-#        run: pipx install hatch
-#
-#      - name: Run tests
-#        run: hatch run lint:all
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.13
+
+      - name: Install Hatch
+        run: pipx install hatch
+
+      - name: Run lint
+        run: hatch run lint:check

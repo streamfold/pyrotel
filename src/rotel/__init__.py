@@ -4,10 +4,11 @@ import os
 from runpy import run_path
 
 from .client import Client as Rotel
-from .config import Config, OTLPExporter
+from .config import Config, OTLPExporter  # noqa: F401
+
 
 def _client_with_config() -> Rotel:
-    # todo: load additional configuration?
+    # TODO: load additional configuration?
     cwd = os.getcwd()
     cfg_path = os.path.join(cwd, "__rotel__.py")
     if os.path.exists(cfg_path):
@@ -16,7 +17,7 @@ def _client_with_config() -> Rotel:
             if not isinstance(cl, Rotel):
                 raise InvalidConfigError("The __rotel__.py file is invalid")
             return cl
-        except KeyError as error:
+        except KeyError:
             raise InvalidConfigError("The __rotel__.py file is invalid")
     # Use defaults
     if os.environ.get("ROTEL_IGNORE_CONFIG_FILE_CHECK") is None:

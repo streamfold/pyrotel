@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .config import Config
 
+
 @dataclass
 class Agent:
     pkg_path: Path = Path(__file__).parent
@@ -44,7 +45,7 @@ class Agent:
 
     def stop(self):
         if self.running is False:
-            print(f"Rotel agent is not running")
+            print("Rotel agent is not running")
             return
 
         # Could this be bad if the agent died and the PID was recycled?
@@ -68,6 +69,6 @@ class Agent:
             except ProcessLookupError:
                 pass # In multi-worker configs, the process may have already terminated
             except FileNotFoundError:
-                print(f"Unable to locate agent pid file")
+                print("Unable to locate agent pid file")
 
 agent = Agent()

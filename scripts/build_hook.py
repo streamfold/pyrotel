@@ -3,11 +3,11 @@ import shutil
 import stat
 import subprocess
 import sysconfig
-
 from runpy import run_path
 from typing import Any
 
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
+
 
 def run_relative(filename: str) -> dict[str, Any]:
     return run_path(os.path.join(os.path.dirname(os.path.abspath(__file__)), filename))
@@ -28,7 +28,7 @@ def current_platform_arch():
         arch = "arm64"
 
     if osname == "linux":
-        ldd_run = subprocess.run(["ldd", "--version"], capture_output=True)
+        ldd_run = subprocess.run(["ldd", "--version"], capture_output=True, check=False)
         if b"musl" in ldd_run.stderr:
             osname = "linux-musl"
 
@@ -48,7 +48,7 @@ def download_env(agent_arch):
 
 def download_agent(script_path, agent_arch, out_file):
     if not env_not_blank("GITHUB_API_TOKEN"):
-        print(f"must set GITHUB_API_TOKEN to download artifacts")
+        print("must set GITHUB_API_TOKEN to download artifacts")
         exit(1)
 
     env = download_env(agent_arch)
@@ -74,7 +74,7 @@ def rm_file(file_path):
         pass
 
 def env_not_blank(key) -> bool:
-    if not key in os.environ:
+    if key not in os.environ:
         return False
     value = os.environ[key]
     return value != ""
@@ -94,7 +94,7 @@ class CustomBuildHook(BuildHookInterface):
             platform_arch = current_platform_arch()
             print(f"detected build platform {platform_arch}")
 
-        if not platform_arch in PLATFORM_TAGS:
+        if platform_arch not in PLATFORM_TAGS:
             print(f"unsupported platform_arch: {platform_arch}")
             exit(1)
 

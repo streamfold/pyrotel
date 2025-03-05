@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import os
 import re
-from typing import Any, ClassVar, List, Literal, TypedDict, cast, get_args
+from typing import Any, TypedDict, cast
+
 
 # TODO: when we have more, include a key that defines this exporter type
 class OTLPExporter(TypedDict, total=False):
@@ -54,7 +55,7 @@ class Config:
             pid_file = rotel_env("PID_FILE"),
             log_file = rotel_env("LOG_FILE"),
         )
-        
+
         exporter_type = as_lower(rotel_env("EXPORTER"))
         if exporter_type is None or exporter_type == "otlp":
             pfx = "OTLP_EXPORTER_"
@@ -86,7 +87,7 @@ class Config:
             "PID_FILE": opts.get("pid_file"),
             "LOG_FILE": opts.get("log_file"),
         }
-        exporter = opts.get("exporter") 
+        exporter = opts.get("exporter")
         if exporter is not None:
             pfx = "OTLP_EXPORTER_"
             updates.update({
