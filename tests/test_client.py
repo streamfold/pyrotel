@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import os
 
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
-    OTLPSpanExporter as OTLPGRPCSpanExporter
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+    OTLPSpanExporter as OTLPGRPCSpanExporter,
+)
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import Compression
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import \
-    OTLPSpanExporter as OTLPHTTPSpanExporter
-from opentelemetry.sdk.resources import (DEPLOYMENT_ENVIRONMENT, SERVICE_NAME,
-                                         Resource)
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+    OTLPSpanExporter as OTLPHTTPSpanExporter,
+)
+from opentelemetry.sdk.resources import DEPLOYMENT_ENVIRONMENT, SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 

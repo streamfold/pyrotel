@@ -102,6 +102,7 @@ fmt = [
 ]
 
 [tool.isort]
+profile = "black"
 lines_after_imports = 2
 
 [tool.ruff.lint.extend-per-file-ignores]
