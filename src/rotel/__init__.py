@@ -19,6 +19,8 @@ def _client_with_config() -> Rotel:
         except KeyError as error:
             raise InvalidConfigError("The __rotel__.py file is invalid")
     # Use defaults
+    if os.environ.get("ROTEL_IGNORE_CONFIG_FILE_CHECK") is None:
+        print(f"Rotel could not locate the __rotel__.py config file, using defaults.")
     return Rotel()
 
 def _must_initialize_client() -> Rotel:
