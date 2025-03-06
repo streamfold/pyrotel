@@ -23,7 +23,7 @@ Add the `rotel` Python package to your project's dependencies. There are two app
 In the startup section of your `main.py` add the following code block. Replace the endpoint with the endpoint of your OpenTelemetry vendor and any required API KEY headers. 
 
 ```python
-from rotel import Rotel, OTLPExporter
+from rotel import OTLPExporter, Rotel
 
 rotel = Rotel(
     enabled = True,
