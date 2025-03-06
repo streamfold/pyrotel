@@ -52,7 +52,7 @@ Any typed configuration options will override environment variables of the same 
 
 ---
 
-See the *Configuration* section for the full list of options.
+See the [*Configuration*](#configuration) section for the full list of options.
 
 ### OpenTelemetry SDK configuration
 
