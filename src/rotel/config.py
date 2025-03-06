@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import os
-import re
-from typing import Any, TypedDict, cast
+from typing import TypedDict, cast
 
 
 # TODO: when we have more, include a key that defines this exporter type

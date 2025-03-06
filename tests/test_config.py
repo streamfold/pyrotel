@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-from runpy import run_path
 
 from rotel.client import Client as Rotel
 from src.rotel.config import Config, Options, OTLPExporter
