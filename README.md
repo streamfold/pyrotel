@@ -14,7 +14,9 @@ By default, the Rotel agent listens for OpenTelemetry (OTel) data over **gRPC (p
 
 ### Rotel configuration
 
-Add the `rotel` Python package to your project's dependencies. There are two approaches to configuring rotel: 1) using typed config dicts, or 2) with environment variables.
+Add the `rotel` Python package to your project's dependencies. There are two approaches to configuring rotel:
+1. typed config dicts
+2. environment variables
 
 #### Typed dicts
 
