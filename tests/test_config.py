@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-from runpy import run_path
 
 from rotel.client import Client as Rotel
 from src.rotel.config import Config, Options, OTLPExporter
@@ -42,15 +41,16 @@ def test_config_env_basic():
     assert agent["ROTEL_OTLP_EXPORTER_CUSTOM_HEADERS"] == "api=1234,team=8793"
     assert agent["ROTEL_OTLP_EXPORTER_TLS_SKIP_VERIFY"] == "True"
 
-def test_config_from_file():
-    cfg1_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "rotel_cfg1.py")
-
-    os.environ["OTLP_API"] = "foo2.example.com"
-    os.environ["API_KEY"] = "super-secret"
-    os.environ["TEAM_NAME"] = "dev"
-
-    cl = run_path(cfg1_path)["rotel"]
-    assert isinstance(cl, Rotel)
+def test_config_from_options():
+    cl = Rotel(
+        enabled = True,
+        otlp_grpc_endpoint = "localhost:5317",
+        exporter = OTLPExporter(
+            endpoint = "http://foo2.example.com:4317",
+            compression = "gzip",
+            custom_headers = ["api-key=super-secret", "team=dev"]
+        )
+    )
 
     assert cl.config.is_active()
     assert cl.config.options["otlp_grpc_endpoint"] == "localhost:5317"
@@ -64,6 +64,28 @@ def test_config_from_file():
     assert agent.get("ROTEL_OTLP_EXPORTER") is None
     assert agent["ROTEL_OTLP_EXPORTER_ENDPOINT"] == "http://foo2.example.com:4317"
     assert agent["ROTEL_OTLP_EXPORTER_CUSTOM_HEADERS"] == "api-key=super-secret,team=dev"
+
+def test_config_env_override():
+    os.environ["ROTEL_OTLP_GRPC_ENDPOINT"] = "localhost:5317"
+    os.environ["ROTEL_OTLP_EXPORTER_ENDPOINT"] = "http://notused.example.com:4318"
+    os.environ["ROTEL_OTLP_EXPORTER_PROTOCOL"] = "http"
+
+    cl = Rotel(
+        enabled = True,
+        exporter = OTLPExporter(
+            endpoint = "http://foo2.example.com:4318",
+        )
+    )
+
+    assert cl.config.is_active()
+    assert cl.config.options["otlp_grpc_endpoint"] == "localhost:5317"
+    assert cl.config.options["exporter"]["endpoint"] == "http://foo2.example.com:4318"
+    assert cl.config.options["exporter"]["protocol"] == "http"
+
+    agent = cl.config.build_agent_environment()
+    assert agent["ROTEL_OTLP_GRPC_ENDPOINT"] == "localhost:5317"
+    assert agent["ROTEL_OTLP_EXPORTER_ENDPOINT"] == "http://foo2.example.com:4318"
+    assert agent["ROTEL_OTLP_EXPORTER_PROTOCOL"] == "http"
 
 def test_config_validation():
     cfg = Config(Options(

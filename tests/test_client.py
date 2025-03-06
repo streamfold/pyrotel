@@ -76,6 +76,28 @@ def test_client_connect_grpc(mock_server):
 
     assert MockServer.tracker.get_count() == 1
 
+def test_client_env_config(mock_server):
+    addr = mock_server.address()
+
+    os.environ["ROTEL_ENABLED"] = "true"
+    os.environ["ROTEL_OTLP_EXPORTER_ENDPOINT"] = f"http://{addr[0]}:{addr[1]}"
+    os.environ["ROTEL_OTLP_EXPORTER_PROTOCOL"] = "http"
+
+    from src.rotel import start
+    start()
+
+    provider = new_grpc_provider()
+    tracer = new_tracer(provider, "pyrotel.test")
+
+    with tracer.start_as_current_span("test_client_active"):
+        pass
+
+    provider.shutdown()
+    wait_until(2, 0.1, lambda: MockServer.tracker.get_count() > 0)
+
+    assert MockServer.tracker.get_count() == 1
+
+
 def test_client_double_start(mock_server):
     addr = mock_server.address()
 

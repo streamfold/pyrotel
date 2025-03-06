@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import os
-import re
-from typing import Any, TypedDict, cast
+from typing import TypedDict, cast
 
 
 # TODO: when we have more, include a key that defines this exporter type
@@ -22,6 +21,7 @@ class Options(TypedDict, total=False):
     otlp_http_endpoint: str | None
     pid_file: str | None
     log_file: str | None
+    debug_log: list[str] | None
     exporter: OTLPExporter | None
 
 class Config:
@@ -35,10 +35,10 @@ class Config:
 
     def __init__(self, options: Options | None = None):
         opts = Options()
-        opts.update(self.DEFAULT_OPTIONS)
-        opts.update(Config.load_options_from_env())
+        deep_merge_options(opts, self.DEFAULT_OPTIONS)
+        deep_merge_options(opts, Config.load_options_from_env())
         if options is not None:
-            opts.update(env_sub_opts(options))
+            deep_merge_options(opts, options)
 
         self.options = opts
         self.valid = self.validate()
@@ -54,6 +54,7 @@ class Config:
             otlp_http_endpoint = rotel_env("OTLP_HTTP_ENDPOINT"),
             pid_file = rotel_env("PID_FILE"),
             log_file = rotel_env("LOG_FILE"),
+            debug_log = as_list(rotel_env("DEBUG_LOG"))
         )
 
         exporter_type = as_lower(rotel_env("EXPORTER"))
@@ -86,6 +87,7 @@ class Config:
             "OTLP_HTTP_ENDPOINT": opts.get("otlp_http_endpoint"),
             "PID_FILE": opts.get("pid_file"),
             "LOG_FILE": opts.get("log_file"),
+            "DEBUG_LOG": opts.get("debug_log"),
         }
         exporter = opts.get("exporter")
         if exporter is not None:
@@ -152,41 +154,16 @@ def rotel_expand_env_key(key: str) -> str:
         return key
     return "ROTEL_" + key.upper()
 
+def deep_merge_options(base: Options, src: Options):
+    deep_merge_dicts(cast(dict, base), cast(dict, src))
 
-def replace_env_vars(input_string):
-    """
-    Replace all occurrences of {UPPERCASE} in a string with corresponding environment variable values.
-    """
-    def get_env_var(match):
-        var_name = match.group(1)  # Extract name without braces
-        return os.environ.get(var_name, f"{{{var_name}}}")  # Return original if not found
-
-    # Pattern matches uppercase or underscore letters enclosed in curly braces
-    pattern = r'\{([A-Z][A-Z_]*)\}'
-
-    # Replace all matches using the get_env_var function
-    return re.sub(pattern, get_env_var, input_string)
-
-def env_sub_value(value: Any) -> Any:
-    if isinstance(value, str):
-        return replace_env_vars(value)
-    return value
-
-def env_sub_list(opts : list[str]) -> list[str]:
-    ret = []
-    for v in opts:
-        ret.append(env_sub_value(v))
-    return list(ret)
-
-def env_sub_opts(opts : Options) -> Options:
-    for k, v in opts.items():
-        if isinstance(v, dict):
-            ret = env_sub_opts(v)
-            cast(dict, opts)[k] = ret
-        elif isinstance(v, list):
-            ret = env_sub_list(v)
-            cast(dict, opts)[k] = ret
+def deep_merge_dicts(base: dict, src: dict):
+    for k, v in src.items():
+        if v is None:
+            continue
+        elif base.get(k) is None:
+            base[k] = v
+        elif isinstance(v, dict):
+            deep_merge_dicts(base[k], v)
         else:
-            ret = env_sub_value(v)
-            cast(dict, opts)[k] = ret
-    return opts
+            base[k] = v
