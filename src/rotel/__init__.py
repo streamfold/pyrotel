@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .client import Client as Rotel
-from .config import Config, OTLPExporter  # noqa: F401
+from .config import Config, OTLPExporter, OTLPExporterEndpoint  # noqa: F401
 
 
 def start() -> None:

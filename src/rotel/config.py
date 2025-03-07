@@ -3,6 +3,18 @@ from __future__ import annotations
 import os
 from typing import TypedDict, cast
 
+from src.rotel.error import _errlog
+
+
+class OTLPExporterEndpoint(TypedDict, total=False):
+    endpoint: str | None
+    protocol: str | None
+    custom_headers: list[str] | None
+    compression: str | None
+    tls_cert_file: str | None
+    tls_key_file: str | None
+    tls_ca_file: str | None
+    tls_skip_verify: bool | None
 
 # TODO: when we have more, include a key that defines this exporter type
 class OTLPExporter(TypedDict, total=False):
@@ -15,14 +27,21 @@ class OTLPExporter(TypedDict, total=False):
     tls_ca_file: str | None
     tls_skip_verify: bool | None
 
+    traces: OTLPExporterEndpoint | None
+    metrics: OTLPExporterEndpoint | None
+
 class Options(TypedDict, total=False):
     enabled: bool | None
-    otlp_grpc_endpoint: str | None
-    otlp_http_endpoint: str | None
     pid_file: str | None
     log_file: str | None
+    log_format: str | None
     debug_log: list[str] | None
+    otlp_grpc_endpoint: str | None
+    otlp_http_endpoint: str | None
+    otlp_receiver_traces_disabled: bool | None
+    otlp_receiver_metrics_disabled: bool | None
     exporter: OTLPExporter | None
+
 
 class Config:
     DEFAULT_OPTIONS = Options(
@@ -36,7 +55,7 @@ class Config:
     def __init__(self, options: Options | None = None):
         opts = Options()
         deep_merge_options(opts, self.DEFAULT_OPTIONS)
-        deep_merge_options(opts, Config.load_options_from_env())
+        deep_merge_options(opts, Config._load_options_from_env())
         if options is not None:
             deep_merge_options(opts, options)
 
@@ -47,29 +66,33 @@ class Config:
         return self.options["enabled"] and self.valid
 
     @staticmethod
-    def load_options_from_env() -> Options:
+    def _load_options_from_env() -> Options:
         env = Options(
             enabled = as_bool(rotel_env("ENABLED")),
-            otlp_grpc_endpoint = rotel_env("OTLP_GRPC_ENDPOINT"),
-            otlp_http_endpoint = rotel_env("OTLP_HTTP_ENDPOINT"),
             pid_file = rotel_env("PID_FILE"),
             log_file = rotel_env("LOG_FILE"),
-            debug_log = as_list(rotel_env("DEBUG_LOG"))
+            log_format = rotel_env("LOG_FORMAT"),
+            debug_log = as_list(rotel_env("DEBUG_LOG")),
+            otlp_grpc_endpoint = rotel_env("OTLP_GRPC_ENDPOINT"),
+            otlp_http_endpoint = rotel_env("OTLP_HTTP_ENDPOINT"),
+            otlp_receiver_traces_disabled = as_bool(rotel_env("OTLP_RECEIVER_TRACES_DISABLED")),
+            otlp_receiver_metrics_disabled = as_bool(rotel_env("OTLP_RECEIVER_METRICS_DISABLED")),
         )
 
         exporter_type = as_lower(rotel_env("EXPORTER"))
         if exporter_type is None or exporter_type == "otlp":
-            pfx = "OTLP_EXPORTER_"
-            env["exporter"] = OTLPExporter(
-                endpoint = rotel_env(pfx + "ENDPOINT"),
-                protocol = as_lower(rotel_env(pfx + "PROTOCOL")),
-                custom_headers = as_list(rotel_env(pfx + "CUSTOM_HEADERS")),
-                compression = as_lower(rotel_env(pfx + "COMPRESSION")),
-                tls_cert_file = rotel_env(pfx + "TLS_CERT_FILE"),
-                tls_key_file = rotel_env(pfx + "TLS_KEY_FILE"),
-                tls_ca_file = rotel_env(pfx + "TLS_CA_FILE"),
-                tls_skip_verify = as_bool(rotel_env(pfx + "TLS_SKIP_VERIFY"))
-            )
+            exporter = Config._load_otlp_exporter_options_from_env(None, OTLPExporter)
+            if exporter is None:
+                # make sure we always construct the top-level exporter config
+                exporter = OTLPExporter()
+            env["exporter"] = exporter
+
+            endpoint = Config._load_otlp_exporter_options_from_env("TRACES", OTLPExporterEndpoint)
+            if endpoint is not None:
+                exporter["traces"] = endpoint
+            endpoint = Config._load_otlp_exporter_options_from_env("METRICS", OTLPExporterEndpoint)
+            if endpoint is not None:
+                exporter["metrics"] = endpoint
 
         final_env = Options()
 
@@ -78,30 +101,53 @@ class Config:
                 cast(dict, final_env)[key] = value
         return final_env
 
+    @staticmethod
+    def _load_otlp_exporter_options_from_env(endpoint_type: str | None, endpoint_class) -> OTLPExporterEndpoint | None:
+        pfx = "OTLP_EXPORTER_"
+        if endpoint_type is not None:
+            pfx += f"{endpoint_type}_"
+        endpoint = endpoint_class(
+            endpoint = rotel_env(pfx + "ENDPOINT"),
+            protocol = as_lower(rotel_env(pfx + "PROTOCOL")),
+            custom_headers = as_list(rotel_env(pfx + "CUSTOM_HEADERS")),
+            compression = as_lower(rotel_env(pfx + "COMPRESSION")),
+            tls_cert_file = rotel_env(pfx + "TLS_CERT_FILE"),
+            tls_key_file = rotel_env(pfx + "TLS_KEY_FILE"),
+            tls_ca_file = rotel_env(pfx + "TLS_CA_FILE"),
+            tls_skip_verify = as_bool(rotel_env(pfx + "TLS_SKIP_VERIFY"))
+        )
+        # if any field is set, return the endpoint config, otherwise None
+        for k, v in endpoint.items():
+            if v is not None:
+                return endpoint
+        return None
+
+
     def build_agent_environment(self) -> dict[str,str]:
         opts = self.options
 
         spawn_env = os.environ.copy()
         updates = {
-            "OTLP_GRPC_ENDPOINT": opts.get("otlp_grpc_endpoint"),
-            "OTLP_HTTP_ENDPOINT": opts.get("otlp_http_endpoint"),
             "PID_FILE": opts.get("pid_file"),
             "LOG_FILE": opts.get("log_file"),
+            "LOG_FORMAT": opts.get("log_format"),
             "DEBUG_LOG": opts.get("debug_log"),
+            "OTLP_GRPC_ENDPOINT": opts.get("otlp_grpc_endpoint"),
+            "OTLP_HTTP_ENDPOINT": opts.get("otlp_http_endpoint"),
+            "OTLP_RECEIVER_TRACES_DISABLED": opts.get("otlp_receiver_traces_disabled"),
+            "OTLP_RECEIVER_METRICS_DISABLED": opts.get("otlp_receiver_metrics_disabled"),
         }
         exporter = opts.get("exporter")
         if exporter is not None:
-            pfx = "OTLP_EXPORTER_"
-            updates.update({
-                pfx + "ENDPOINT": exporter.get("endpoint"),
-                pfx + "PROTOCOL": exporter.get("protocol"),
-                pfx + "CUSTOM_HEADERS": exporter.get("custom_headers"),
-                pfx + "COMPRESSION": exporter.get("compression"),
-                pfx + "TLS_CERT_FILE": exporter.get("tls_cert_file"),
-                pfx + "TLS_KEY_FILE": exporter.get("tls_key_file"),
-                pfx + "TLS_CA_FILE": exporter.get("tls_ca_file"),
-                pfx + "TLS_SKIP_VERIFY": exporter.get("tls_skip_verify"),
-            })
+            _set_otlp_exporter_agent_env(updates, None, exporter)
+
+            traces = exporter.get("traces")
+            if traces is not None:
+                _set_otlp_exporter_agent_env(updates, "TRACES", traces)
+
+            metrics = exporter.get("metrics")
+            if metrics is not None:
+                _set_otlp_exporter_agent_env(updates, "METRICS", metrics)
 
         for key, value in updates.items():
             if value is not None:
@@ -114,16 +160,37 @@ class Config:
 
     # Perform some minimal validation for now, we can expand this as needed
     def validate(self) -> bool | None:
-        if not self.options["enabled"]:
+        if not self.options.get("enabled"):
             return None
 
-        exporter = self.options["exporter"]
+        exporter = self.options.get("exporter")
         if exporter is not None:
             protocol = exporter.get("protocol")
             if protocol is not None and protocol not in {'grpc', 'http'}:
+                _errlog("exporter protocol must be 'grpc' or 'http'")
                 return False
+
+        log_format = self.options.get("log_format")
+        if log_format is not None and log_format not in {'json', 'text'}:
+            _errlog("log_format must be 'json' or 'text'")
+            return False
+
         return True
 
+def _set_otlp_exporter_agent_env(updates: dict, endpoint_type: str | None, exporter: OTLPExporter | OTLPExporterEndpoint | None) -> None:
+    pfx = "OTLP_EXPORTER_"
+    if endpoint_type is not None:
+        pfx += f"{endpoint_type}_"
+    updates.update({
+        pfx + "ENDPOINT": exporter.get("endpoint"),
+        pfx + "PROTOCOL": exporter.get("protocol"),
+        pfx + "CUSTOM_HEADERS": exporter.get("custom_headers"),
+        pfx + "COMPRESSION": exporter.get("compression"),
+        pfx + "TLS_CERT_FILE": exporter.get("tls_cert_file"),
+        pfx + "TLS_KEY_FILE": exporter.get("tls_key_file"),
+        pfx + "TLS_CA_FILE": exporter.get("tls_ca_file"),
+        pfx + "TLS_SKIP_VERIFY": exporter.get("tls_skip_verify"),
+    })
 
 def as_lower(value: str | None) -> str | None:
     if value is not None:

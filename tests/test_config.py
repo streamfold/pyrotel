@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 
 from rotel.client import Client as Rotel
-from src.rotel.config import Config, Options, OTLPExporter
+from src.rotel.config import Config, Options, OTLPExporter, OTLPExporterEndpoint
 
 
 def test_defaults():
@@ -87,6 +87,43 @@ def test_config_env_override():
     assert agent["ROTEL_OTLP_EXPORTER_ENDPOINT"] == "http://foo2.example.com:4318"
     assert agent["ROTEL_OTLP_EXPORTER_PROTOCOL"] == "http"
 
+def test_config_custom_endpoints():
+    cl = Rotel(
+        enabled = True,
+        exporter = OTLPExporter(
+            traces = OTLPExporterEndpoint(
+                endpoint = "http://foo2.example.com:4318/api/v1/traces",
+                compression = "none",
+            ),
+            metrics = OTLPExporterEndpoint(
+                endpoint = "http://foo2.example.com:4318/api/v1/metrics",
+            ),
+        ),
+    )
+
+    assert cl.config.is_active()
+
+    agent = cl.config.build_agent_environment()
+    assert agent["ROTEL_OTLP_EXPORTER_TRACES_ENDPOINT"] == "http://foo2.example.com:4318/api/v1/traces"
+    assert agent["ROTEL_OTLP_EXPORTER_TRACES_COMPRESSION"] == "none"
+    assert agent["ROTEL_OTLP_EXPORTER_METRICS_ENDPOINT"] == "http://foo2.example.com:4318/api/v1/metrics"
+
+def test_config_custom_endpoints_from_env():
+    os.environ["ROTEL_OTLP_EXPORTER_TRACES_ENDPOINT"] = "http://foo2.example.com:4318/api/v1/traces"
+    os.environ["ROTEL_OTLP_EXPORTER_METRICS_ENDPOINT"] = "http://foo2.example.com:4318/api/v1/metrics"
+
+    cl = Rotel(
+        enabled = True,
+        exporter = OTLPExporter(
+            endpoint = "http://foo2.example.com:4318",
+        ),
+    )
+
+    assert cl.config.is_active()
+    assert cl.config.options["exporter"]["traces"]["endpoint"] == "http://foo2.example.com:4318/api/v1/traces"
+    assert cl.config.options["exporter"]["metrics"]["endpoint"] == "http://foo2.example.com:4318/api/v1/metrics"
+
+
 def test_config_validation():
     cfg = Config(Options(
         otlp_grpc_endpoint = "localhost:4317"
@@ -112,6 +149,15 @@ def test_config_validation():
         exporter = OTLPExporter(
             endpoint = "http://foo.example.com:4317",
             protocol = "unknown"
+        )
+    ))
+    assert not cfg.is_active()
+
+    cfg = Config(Options(
+        enabled = True,
+        log_format = "csv",
+        exporter = OTLPExporter(
+            endpoint = "http://foo.example.com:4317",
         )
     ))
     assert not cfg.is_active()
