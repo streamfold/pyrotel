@@ -11,6 +11,12 @@ class OTLPExporterEndpoint(TypedDict, total=False):
     protocol: str | None
     custom_headers: list[str] | None
     compression: str | None
+    request_timeout: str | None
+    max_attempts: int | None
+    initial_backoff_ms: str | None
+    max_backoff_ms: str | None
+    batch_max_size: int | None
+    batch_timeout: str | None
     tls_cert_file: str | None
     tls_key_file: str | None
     tls_ca_file: str | None
@@ -22,6 +28,12 @@ class OTLPExporter(TypedDict, total=False):
     protocol: str | None
     custom_headers: list[str] | None
     compression: str | None
+    request_timeout: str | None
+    max_attempts: int | None
+    initial_backoff_ms: str | None
+    max_backoff_ms: str | None
+    batch_max_size: int | None
+    batch_timeout: str | None
     tls_cert_file: str | None
     tls_key_file: str | None
     tls_ca_file: str | None
@@ -111,6 +123,12 @@ class Config:
             protocol = as_lower(rotel_env(pfx + "PROTOCOL")),
             custom_headers = as_list(rotel_env(pfx + "CUSTOM_HEADERS")),
             compression = as_lower(rotel_env(pfx + "COMPRESSION")),
+            request_timeout = rotel_env(pfx + "REQUEST_TIMEOUT"),
+            max_attempts = as_int(rotel_env(pfx + "MAX_ATTEMPTS")),
+            initial_backoff_ms = rotel_env(pfx + "INITIAL_BACKOFF_MS"),
+            max_backoff_ms = rotel_env(pfx + "MAX_BACKOFF_MS"),
+            batch_max_size = as_int(rotel_env(pfx + "BATCH_MAX_SIZE")),
+            batch_timeout = rotel_env(pfx + "BATCH_TIMEOUT"),
             tls_cert_file = rotel_env(pfx + "TLS_CERT_FILE"),
             tls_key_file = rotel_env(pfx + "TLS_KEY_FILE"),
             tls_ca_file = rotel_env(pfx + "TLS_CA_FILE"),
@@ -186,6 +204,12 @@ def _set_otlp_exporter_agent_env(updates: dict, endpoint_type: str | None, expor
         pfx + "PROTOCOL": exporter.get("protocol"),
         pfx + "CUSTOM_HEADERS": exporter.get("custom_headers"),
         pfx + "COMPRESSION": exporter.get("compression"),
+        pfx + "REQUEST_TIMEOUT": exporter.get("request_timeout"),
+        pfx + "MAX_ATTEMPTS": exporter.get("max_attempts"),
+        pfx + "INITIAL_BACKOFF_MS": exporter.get("initial_backoff_ms"),
+        pfx + "MAX_BACKOFF_MS": exporter.get("max_backoff_ms"),
+        pfx + "BATCH_MAX_SIZE": exporter.get("batch_max_size"),
+        pfx + "BATCH_TIMEOUT": exporter.get("batch_timeout"),
         pfx + "TLS_CERT_FILE": exporter.get("tls_cert_file"),
         pfx + "TLS_KEY_FILE": exporter.get("tls_key_file"),
         pfx + "TLS_CA_FILE": exporter.get("tls_ca_file"),
@@ -201,6 +225,15 @@ def as_list(value: str | None) -> list[str] | None:
     if value is not None:
         return value.split(",")
     return None
+
+def as_int(value: str | None) -> int | None:
+    if value is None:
+        return None
+
+    try:
+        return int(value)
+    except ValueError:
+        return None
 
 def as_bool(value: str | None) -> bool | None:
     if value is None:

@@ -35,7 +35,7 @@ rotel = Rotel(
     enabled = True,
     exporter = OTLPExporter(
         endpoint = "https://foo.example.com",
-        custom_headers=[f"x-api-key={settings.API_KEY}"]
+        custom_headers=[f"x-api-key={settings.API_KEY}", "x-data-set=testing"]
     ),
 )
 rotel.start()
@@ -87,16 +87,22 @@ This is the full list of options and their environment variable alternatives. An
 
 The OTLPExporter can be enabled with the following options.
 
-| Option Name     | Type      | Environ                             | Default | Options      |
-|-----------------|-----------|-------------------------------------|---------|--------------|
-| endpoint        | str       | ROTEL_OTLP_EXPORTER_ENDPOINT        |         |              |
-| protocol        | str       | ROTEL_OTLP_EXPORTER_PROTOCOL        | grpc    | grpc or http |
-| custom_headers  | list[str] | ROTEL_OTLP_EXPORTER_CUSTOM_HEADERS  |         |              |
-| compression     | str       | ROTEL_OTLP_EXPORTER_COMPRESSION     | gzip    | gzip or none |
-| tls_cert_file   | str       | ROTEL_OTLP_EXPORTER_TLS_CERT_FILE   |         |              |
-| tls_key_file    | str       | ROTEL_OTLP_EXPORTER_TLS_KEY_FILE    |         |              |
-| tls_ca_file     | str       | ROTEL_OTLP_EXPORTER_TLS_CA_FILE     |         |              |
-| tls_skip_verify | bool      | ROTEL_OTLP_EXPORTER_TLS_SKIP_VERIFY |         |              |
+| Option Name        | Type      | Environ                                | Default | Options      |
+|--------------------|-----------|----------------------------------------|---------|--------------|
+| endpoint           | str       | ROTEL_OTLP_EXPORTER_ENDPOINT           |         |              |
+| protocol           | str       | ROTEL_OTLP_EXPORTER_PROTOCOL           | grpc    | grpc or http |
+| custom_headers     | list[str] | ROTEL_OTLP_EXPORTER_CUSTOM_HEADERS     |         |              |
+| compression        | str       | ROTEL_OTLP_EXPORTER_COMPRESSION        | gzip    | gzip or none |
+| request_timeout    | str       | ROTEL_OTLP_EXPORTER_REQUEST_TIMEOUT    | 30s     |              |
+| max_attempts       | int       | ROTEL_OTLP_EXPORTER_MAX_ATTEMPTS       | 3       |              |
+| initial_backoff_ms | str       | ROTEL_OTLP_EXPORTER_INITIAL_BACKOFF_MS | 500ms   |              |
+| max_backoff_ms     | str       | ROTEL_OTLP_EXPORTER_MAX_BACKOFF_MS     | 2s      |              |
+| batch_max_size     | int       | ROTEL_OTLP_EXPORTER_BATCH_MAX_SIZE     | 8192    |              |
+| batch_timeout      | str       | ROTEL_OTLP_EXPORTER_BATCH_TIMEOUT      | 200ms   |              |
+| tls_cert_file      | str       | ROTEL_OTLP_EXPORTER_TLS_CERT_FILE      |         |              |
+| tls_key_file       | str       | ROTEL_OTLP_EXPORTER_TLS_KEY_FILE       |         |              |
+| tls_ca_file        | str       | ROTEL_OTLP_EXPORTER_TLS_CA_FILE        |         |              |
+| tls_skip_verify    | bool      | ROTEL_OTLP_EXPORTER_TLS_SKIP_VERIFY    |         |              |
 
 ### Endpoint overrides
 
