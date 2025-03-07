@@ -114,7 +114,7 @@ class Config:
         return final_env
 
     @staticmethod
-    def _load_otlp_exporter_options_from_env(endpoint_type: str | None, endpoint_class) -> OTLPExporterEndpoint | None:
+    def _load_otlp_exporter_options_from_env(endpoint_type: str | None, endpoint_class) -> OTLPExporter | OTLPExporterEndpoint | None:
         pfx = "OTLP_EXPORTER_"
         if endpoint_type is not None:
             pfx += f"{endpoint_type}_"
