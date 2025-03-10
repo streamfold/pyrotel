@@ -9,6 +9,7 @@ description = "Lightweight OpenTelemetry collector"
 readme = "README.md"
 requires-python = ">=3.8"
 keywords = []
+license = "Apache-2.0"
 authors = [
     { name = "Ray Jenkins", email = "ray@streamfold.com" },
     { name = "Mike Heffner", email = "mike@streamfold.com" },
