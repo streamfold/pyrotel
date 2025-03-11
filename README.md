@@ -87,22 +87,22 @@ This is the full list of options and their environment variable alternatives. An
 
 The OTLPExporter can be enabled with the following options.
 
-| Option Name        | Type      | Environ                                | Default | Options      |
-|--------------------|-----------|----------------------------------------|---------|--------------|
-| endpoint           | str       | ROTEL_OTLP_EXPORTER_ENDPOINT           |         |              |
-| protocol           | str       | ROTEL_OTLP_EXPORTER_PROTOCOL           | grpc    | grpc or http |
-| custom_headers     | list[str] | ROTEL_OTLP_EXPORTER_CUSTOM_HEADERS     |         |              |
-| compression        | str       | ROTEL_OTLP_EXPORTER_COMPRESSION        | gzip    | gzip or none |
-| request_timeout    | str       | ROTEL_OTLP_EXPORTER_REQUEST_TIMEOUT    | 30s     |              |
-| max_attempts       | int       | ROTEL_OTLP_EXPORTER_MAX_ATTEMPTS       | 3       |              |
-| initial_backoff_ms | str       | ROTEL_OTLP_EXPORTER_INITIAL_BACKOFF_MS | 500ms   |              |
-| max_backoff_ms     | str       | ROTEL_OTLP_EXPORTER_MAX_BACKOFF_MS     | 2s      |              |
-| batch_max_size     | int       | ROTEL_OTLP_EXPORTER_BATCH_MAX_SIZE     | 8192    |              |
-| batch_timeout      | str       | ROTEL_OTLP_EXPORTER_BATCH_TIMEOUT      | 200ms   |              |
-| tls_cert_file      | str       | ROTEL_OTLP_EXPORTER_TLS_CERT_FILE      |         |              |
-| tls_key_file       | str       | ROTEL_OTLP_EXPORTER_TLS_KEY_FILE       |         |              |
-| tls_ca_file        | str       | ROTEL_OTLP_EXPORTER_TLS_CA_FILE        |         |              |
-| tls_skip_verify    | bool      | ROTEL_OTLP_EXPORTER_TLS_SKIP_VERIFY    |         |              |
+| Option Name            | Type      | Environ                                    | Default | Options      |
+|------------------------|-----------|--------------------------------------------|---------|--------------|
+| endpoint               | str       | ROTEL_OTLP_EXPORTER_ENDPOINT               |         |              |
+| protocol               | str       | ROTEL_OTLP_EXPORTER_PROTOCOL               | grpc    | grpc or http |
+| custom_headers         | list[str] | ROTEL_OTLP_EXPORTER_CUSTOM_HEADERS         |         |              |
+| compression            | str       | ROTEL_OTLP_EXPORTER_COMPRESSION            | gzip    | gzip or none |
+| request_timeout        | str       | ROTEL_OTLP_EXPORTER_REQUEST_TIMEOUT        | 5s      |              |
+| retry_initial_backoff  | str       | ROTEL_OTLP_EXPORTER_RETRY_INITIAL_BACKOFF  | 5s      |              |
+| retry_max_backoff      | str       | ROTEL_OTLP_EXPORTER_RETRY_MAX_BACKOFF      | 30s     |              |
+| retry_max_elapsed_time | str       | ROTEL_OTLP_EXPORTER_RETRY_MAX_ELAPSED_TIME | 300s    |              |
+| batch_max_size         | int       | ROTEL_OTLP_EXPORTER_BATCH_MAX_SIZE         | 8192    |              |
+| batch_timeout          | str       | ROTEL_OTLP_EXPORTER_BATCH_TIMEOUT          | 200ms   |              |
+| tls_cert_file          | str       | ROTEL_OTLP_EXPORTER_TLS_CERT_FILE          |         |              |
+| tls_key_file           | str       | ROTEL_OTLP_EXPORTER_TLS_KEY_FILE           |         |              |
+| tls_ca_file            | str       | ROTEL_OTLP_EXPORTER_TLS_CA_FILE            |         |              |
+| tls_skip_verify        | bool      | ROTEL_OTLP_EXPORTER_TLS_SKIP_VERIFY        |         |              |
 
 ### Endpoint overrides
 
@@ -133,6 +133,20 @@ Or, you can override the endpoints using environment variables:
 * `ROTEL_OTLP_EXPORTER_METRICS_ENDPOINT=http://foo.example.com:4318/api/otlp/metrics`
 
 All the OTLP exporter settings can be overridden per endpoint type (traces, metrics, logs). Any value that is not overridden will fall back to the top-level exporter configuration or the default.
+
+### Retries and timeouts
+
+You can override the default request timeout of 5 seconds for the OTLP Exporter with the exporter setting:
+
+* `request_timeout`: Takes a string time duration, so `"250ms"` for 250 milliseconds, `"3s"` for 3 seconds, etc.
+
+Requests will be retried if they match retryable error codes like 429 (Too Many Requests) or timeout. You can control the behavior with the following exporter options:
+
+* `retry_initial_backoff`: Initial backoff duration
+* `retry_max_backoff`: Maximum backoff interval
+* `retry_max_elapsed_time`: Maximum wall time a request will be retried for until it is marked as permanent failure
+
+All options should be represented as string time durations.
 
 ## Debugging
 

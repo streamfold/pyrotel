@@ -71,7 +71,7 @@ def test_config_env_override():
     os.environ["ROTEL_OTLP_GRPC_ENDPOINT"] = "localhost:5317"
     os.environ["ROTEL_OTLP_EXPORTER_ENDPOINT"] = "http://notused.example.com:4318"
     os.environ["ROTEL_OTLP_EXPORTER_PROTOCOL"] = "http"
-    os.environ["ROTEL_OTLP_EXPORTER_MAX_ATTEMPTS"] = "4"
+    os.environ["ROTEL_OTLP_EXPORTER_BATCH_MAX_SIZE"] = "4096"
 
     cl = Rotel(
         enabled = True,
@@ -84,7 +84,7 @@ def test_config_env_override():
     assert cl.config.options["otlp_grpc_endpoint"] == "localhost:5317"
     assert cl.config.options["exporter"]["endpoint"] == "http://foo2.example.com:4318"
     assert cl.config.options["exporter"]["protocol"] == "http"
-    assert cl.config.options["exporter"]["max_attempts"] == 4
+    assert cl.config.options["exporter"]["batch_max_size"] == 4096
 
     agent = cl.config.build_agent_environment()
     assert agent["ROTEL_OTLP_GRPC_ENDPOINT"] == "localhost:5317"
@@ -115,7 +115,7 @@ def test_config_custom_endpoints():
 def test_config_custom_endpoints_from_env():
     os.environ["ROTEL_OTLP_EXPORTER_TRACES_ENDPOINT"] = "http://foo2.example.com:4318/api/v1/traces"
     os.environ["ROTEL_OTLP_EXPORTER_METRICS_ENDPOINT"] = "http://foo2.example.com:4318/api/v1/metrics"
-    os.environ["ROTEL_OTLP_EXPORTER_METRICS_MAX_ATTEMPTS"] = "abc" # should not error
+    os.environ["ROTEL_OTLP_EXPORTER_METRICS_BATCH_MAX_SIZE"] = "abc" # should not error
 
     cl = Rotel(
         enabled = True,
@@ -127,7 +127,7 @@ def test_config_custom_endpoints_from_env():
     assert cl.config.is_active()
     assert cl.config.options["exporter"]["traces"]["endpoint"] == "http://foo2.example.com:4318/api/v1/traces"
     assert cl.config.options["exporter"]["metrics"]["endpoint"] == "http://foo2.example.com:4318/api/v1/metrics"
-    assert cl.config.options["exporter"]["metrics"].get("max_attempts") is None
+    assert cl.config.options["exporter"]["metrics"].get("batch_max_size") is None
 
 
 def test_config_validation():
@@ -146,7 +146,7 @@ def test_config_validation():
         exporter = OTLPExporter(
             endpoint = "http://foo.example.com:4317",
             protocol = "grpc",
-            max_attempts = 4,
+            batch_max_size = 4096,
         )
     ))
     assert cfg.is_active()
