@@ -14,9 +14,9 @@ class OTLPExporterEndpoint(TypedDict, total=False):
     custom_headers: list[str] | None
     compression: str | None
     request_timeout: str | None
-    max_attempts: int | None
-    initial_backoff_ms: str | None
-    max_backoff_ms: str | None
+    retry_initial_backoff: str | None
+    retry_max_backoff: str | None
+    retry_max_elapsed_time: str | None
     batch_max_size: int | None
     batch_timeout: str | None
     tls_cert_file: str | None
@@ -31,9 +31,9 @@ class OTLPExporter(TypedDict, total=False):
     custom_headers: list[str] | None
     compression: str | None
     request_timeout: str | None
-    max_attempts: int | None
-    initial_backoff_ms: str | None
-    max_backoff_ms: str | None
+    retry_initial_backoff: str | None
+    retry_max_backoff: str | None
+    retry_max_elapsed_time: str | None
     batch_max_size: int | None
     batch_timeout: str | None
     tls_cert_file: str | None
@@ -126,9 +126,9 @@ class Config:
             custom_headers = as_list(rotel_env(pfx + "CUSTOM_HEADERS")),
             compression = as_lower(rotel_env(pfx + "COMPRESSION")),
             request_timeout = rotel_env(pfx + "REQUEST_TIMEOUT"),
-            max_attempts = as_int(rotel_env(pfx + "MAX_ATTEMPTS")),
-            initial_backoff_ms = rotel_env(pfx + "INITIAL_BACKOFF_MS"),
-            max_backoff_ms = rotel_env(pfx + "MAX_BACKOFF_MS"),
+            retry_initial_backoff = rotel_env(pfx + "RETRY_INITIAL_BACKOFF"),
+            retry_max_backoff = rotel_env(pfx + "RETRY_MAX_BACKOFF"),
+            retry_max_elapsed_time = rotel_env(pfx + "RETRY_MAX_ELAPSED_TIME"),
             batch_max_size = as_int(rotel_env(pfx + "BATCH_MAX_SIZE")),
             batch_timeout = rotel_env(pfx + "BATCH_TIMEOUT"),
             tls_cert_file = rotel_env(pfx + "TLS_CERT_FILE"),
@@ -207,9 +207,9 @@ def _set_otlp_exporter_agent_env(updates: dict, endpoint_type: str | None, expor
         pfx + "CUSTOM_HEADERS": exporter.get("custom_headers"),
         pfx + "COMPRESSION": exporter.get("compression"),
         pfx + "REQUEST_TIMEOUT": exporter.get("request_timeout"),
-        pfx + "MAX_ATTEMPTS": exporter.get("max_attempts"),
-        pfx + "INITIAL_BACKOFF_MS": exporter.get("initial_backoff_ms"),
-        pfx + "MAX_BACKOFF_MS": exporter.get("max_backoff_ms"),
+        pfx + "RETRY_INITIAL_BACKOFF": exporter.get("retry_initial_backoff"),
+        pfx + "RETRY_MAX_BACKOFF": exporter.get("retry_max_backoff"),
+        pfx + "RETRY_MAX_ELAPSED_TIME": exporter.get("retry_max_elapsed_time"),
         pfx + "BATCH_MAX_SIZE": exporter.get("batch_max_size"),
         pfx + "BATCH_TIMEOUT": exporter.get("batch_timeout"),
         pfx + "TLS_CERT_FILE": exporter.get("tls_cert_file"),
