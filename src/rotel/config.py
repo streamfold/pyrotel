@@ -5,8 +5,7 @@ from __future__ import annotations
 import os
 from typing import TypedDict, cast
 
-#from .error import _errlog
-from src.rotel.error import _errlog
+from .error import _errlog
 
 
 class OTLPExporterEndpoint(TypedDict, total=False):
