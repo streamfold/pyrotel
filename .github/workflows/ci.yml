@@ -51,3 +51,28 @@ jobs:
 
       - name: Run lint
         run: hatch run lint:check
+
+      - name: Check for invalid src imports
+        shell: bash
+        run: |
+          PATTERN="^from src\..*import.*"
+
+          # Find files matching the pattern, excluding .git directory
+          # Using -E for extended regular expressions instead of -P for perl regex
+          # -l flag makes grep only output filenames that match
+          MATCHES=$(grep -r -l -E "$PATTERN" --exclude-dir=".git" src || true)
+
+          if [ -n "$MATCHES" ]; then
+            echo "::error::Found prohibited pattern matches in the following files:"
+            echo "$MATCHES" | while read file; do
+              echo "::error::$file"
+              # Show the actual matches with line numbers, also using -E
+              grep -n -E "$PATTERN" "$file" | while read match; do
+                echo "::error::  $match"
+              done
+            done
+            exit 1  # Fail the GitHub action
+          else
+            echo "Success: No prohibited pattern matches found!"
+            exit 0  # Action succeeds
+          fi
