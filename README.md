@@ -8,13 +8,19 @@ Python package for the Rotel lightweight OpenTelemetry collector.
 
 This package provides an embedded OpenTelemetry collector, built on the lightweight Rotel collector. When started, it spawns a background daemon that accepts OpenTelemetry metrics, traces, and logs. Designed for minimal overhead, Rotel reduces resource consumption while simplifying telemetry collection and processing in complex Python applications—without requiring additional sidecar containers.
 
-By default, the Rotel agent listens for OpenTelemetry data over **gRPC (port 4317)** and **HTTP (port 4318)** on _localhost_. It efficiently batches telemetry signals and forwards them to a configurable OTLP endpoint. Future updates will introduce support for additional filtering, transformations, and exporters.
-
 | Telemetry Type | Support     |
 |----------------|-------------|
 | Metrics        | Alpha       |
 | Traces         | Alpha       |
 | Logs           | Coming soon |
+
+## How it works
+
+By default, the Rotel agent listens for OpenTelemetry data over **gRPC (port 4317)** and **HTTP (port 4318)** on _localhost_. It efficiently batches telemetry signals and forwards them to a configurable OpenTelemetry protocol (OTLP) compatible endpoint.
+
+In your application, you use the [OpenTelemetry Python SDK](https://opentelemetry.io/docs/languages/python/) to add instrumentation for traces, metrics, and logs. The SDK by default will communicate over ports 4317 or 4318 on _localhost_ to the Rotel agent. You can now ship your instrumented application and efficiently export OpenTelemetry data to your vendor or observability tool of choice with a single deployment artifact.
+
+Future updates will introduce support for filtering data, transforming telemetry, and exporting to different vendors and tools.
 
 ## Getting started
 
