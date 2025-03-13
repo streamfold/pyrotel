@@ -6,15 +6,21 @@ Python package for the Rotel lightweight OpenTelemetry collector.
 
 ## Description
 
-This package provides an embedded OpenTelemetry collector, built on the lightweight [Rotel](https://github.com/streamfold/rotel) collector. When started, it spawns a background daemon that accepts OpenTelemetry metrics, traces, and logs. Designed for minimal overhead, Rotel reduces resource consumption while simplifying telemetry collection and processing in complex Python applications—without requiring additional sidecar containers.
-
-By default, the Rotel agent listens for OpenTelemetry data over **gRPC (port 4317)** and **HTTP (port 4318)** on _localhost_. It efficiently batches telemetry signals and forwards them to a configurable OTLP endpoint. Future updates will introduce support for additional filtering, transformations, and exporters.
+This package provides an embedded OpenTelemetry collector, built on the lightweight Rotel collector. When started, it spawns a background daemon that accepts OpenTelemetry metrics, traces, and logs. Designed for minimal overhead, Rotel reduces resource consumption while simplifying telemetry collection and processing in complex Python applications—without requiring additional sidecar containers.
 
 | Telemetry Type | Support     |
 |----------------|-------------|
 | Metrics        | Alpha       |
 | Traces         | Alpha       |
 | Logs           | Coming soon |
+
+## How it works
+
+By default, the Rotel agent listens for OpenTelemetry data over **gRPC (port 4317)** and **HTTP (port 4318)** on _localhost_. It efficiently batches telemetry signals and forwards them to a configurable OpenTelemetry protocol (OTLP) compatible endpoint.
+
+In your application, you use the [OpenTelemetry Python SDK](https://opentelemetry.io/docs/languages/python/) to add instrumentation for traces, metrics, and logs. The SDK by default will communicate over ports 4317 or 4318 on _localhost_ to the Rotel agent. You can now ship your instrumented application and efficiently export OpenTelemetry data to your vendor or observability tool of choice with a single deployment artifact.
+
+Future updates will introduce support for filtering data, transforming telemetry, and exporting to different vendors and tools.
 
 ## Getting started
 
@@ -148,56 +154,95 @@ Requests will be retried if they match retryable error codes like 429 (Too Many 
 
 All options should be represented as string time durations.
 
+### Full OTEL example
+
+To illustrate this further, here's a full example of how to use Rotel to send trace spans to [Axiom](https://axiom.co/)
+from an application instrumented with OpenTelemetry.
+
+The code sample depends on the following environment variables:
+* `ROTEL_ENABLED=true`: Turn on or off based on the deployment environment
+* `AXIOM_DATASET`: Name of an Axiom dataset
+* `AXIOM_API_TOKEN`: Set to an API token that has access to the Axiom dataset
+
+```python
+import os
+
+from rotel import Rotel, OTLPExporter
+
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.resources import Resource, SERVICE_NAME
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+
+
+# Enable at deploy time with ROTEL_ENABLED=true
+if os.environ.get("ROTEL_ENABLED") == "true":
+    #
+    # Configure Rotel to export to Axiom
+    #
+    otlp_exporter = OTLPExporter(
+        endpoint="https://api.axiom.co",
+        protocol="http", # Axiom only supports HTTP
+        custom_headers = [
+            f"Authorization=Bearer {os.environ['AXIOM_API_TOKEN']}",
+            f"X-Axiom-Dataset={os.environ['AXIOM_DATASET']}",
+        ],
+    )
+
+    rotel = Rotel(
+        enabled=True,
+        exporter=otlp_exporter,
+    )
+
+    # Start the agent
+    rotel.start()
+
+    #
+    # Configure OpenTelemetry SDK to export to the localhost Rotel
+    #
+
+    # Define the service name resource for the tracer.
+    resource = Resource(
+        attributes={
+            SERVICE_NAME: "pyrotel-test"
+        }
+    )
+
+    # Create a TracerProvider with the defined resource for creating tracers.
+    provider = TracerProvider(resource=resource)
+
+    # Create the OTel exporter to send to the localhost Rotel agent
+    exporter = OTLPSpanExporter(endpoint = "http://localhost:4318/v1/traces")
+
+    # Create a processor with the OTLP exporter to send trace spans.
+    #
+    # You could also use the BatchSpanProcessor, but since Rotel runs locally
+    # and will batch, you can avoid double batching.
+    processor = SimpleSpanProcessor(exporter)
+    provider.add_span_processor(processor)
+
+    # Set the TracerProvider as the global tracer provider.
+    trace.set_tracer_provider(provider)
+```
+
 ## Debugging
 
 If you set the option `debug_log` to `["traces"]`, or the environment variable `ROTEL_DEBUG_LOG=traces`, then rotel will log a summary to the log file `/tmp/rotel-agent.log` each time it processes trace spans. You can add also specify *metrics* to debug metrics.   
+
+## FAQ
+
+### Do I need to call `rotel.stop()` when I exit?
+
+In most deployment environments you do not need to call `rotel.stop()` and it is **generally recommended that you don't**. Calling `rotel.stop()` will
+terminate the running agent on a host, so any further export calls from OTEL instrumentation will fail. In a multiprocess environment, such as
+_gunicorn_, terminating the Rotel agent from one process will terminate it for all other processes. On ephemeral deployment platforms, it is
+usually fine to leave the agent running until the compute instance, VM/container/isolate, terminate.
 
 ## Community
 
 Want to chat about this project, share feedback, or suggest improvements? Join our [Discord server](https://discord.gg/reUqNWTSGC)! Whether you're a user of this project or not, we'd love to hear your thoughts and ideas. See you there! 🚀
 
-## Development
+## Developing
 
-Install the latest version of the [hatch](https://hatch.pypa.io/latest/install/) build tool. We'll use this to manage the environments, run tests and perform builds.
-
-### Managing Python versions
-
-Hatch will default to the system's Python version.
-If you want to install additional Python versions, you can use `hatch` to manage those.
-The following will install Python 3.9:
-
-```shell
-hatch python install 3.9
-```
-
-Then you can run tests against version 3.9 with:
-```shell
-hatch run test.py39:pytest
-```
-
-### Wheel builds
-
-To build locally using an existing Rotel agent binary, run:
-```shell
-hatch run build:me ../path/to/agent/file
-```
-
-You can always download the latest rotel agent binary from Github. Make sure to create a Github Personal Access Token (PAT) that allows you to pull Github release artifacts. Set that as `GITHUB_API_TOKEN` for the commands below. 
-
-To build using the latest Github built binary:
-```shell
-GITHUB_API_TOKEN=1234 hatch run build:me
-```
-
-Finally, to build for all supported platforms:
-```shell
-GITHUB_API_TOKEN=1234 hatch run build:all
-```
-
-### Linting and formatting
-
-```shell
-hatch run lint:fmt    # will fix anything it can, report others
-hatch run lint:check  # will only report issues
-```
-
+See the [DEVELOPING.md](DEVELOPING.md) doc for building and development instructions.
