@@ -224,6 +224,15 @@ if os.environ.get("ROTEL_ENABLED") == "true":
 
 If you set the option `debug_log` to `["traces"]`, or the environment variable `ROTEL_DEBUG_LOG=traces`, then rotel will log a summary to the log file `/tmp/rotel-agent.log` each time it processes trace spans. You can add also specify *metrics* to debug metrics.   
 
+## FAQ
+
+### Do I need to call `rotel.stop()` when I exit?
+
+In most deployment environments you do not need to call `rotel.stop()` and it is **generally recommended that you don't**. Calling `rotel.stop()` will
+terminate the running agent on a host, so any further export calls from OTEL instrumentation will fail. In a multiprocess environment, such as
+_gunicorn_, terminating the Rotel agent from one process will terminate it for all other processes. On ephemeral deployment platforms, it is
+usually fine to leave the agent running until the compute instance, VM/container/isolate, terminate.
+
 ## Community
 
 Want to chat about this project, share feedback, or suggest improvements? Join our [Discord server](https://discord.gg/reUqNWTSGC)! Whether you're a user of this project or not, we'd love to hear your thoughts and ideas. See you there! 🚀
