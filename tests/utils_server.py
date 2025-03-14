@@ -3,23 +3,37 @@
 from __future__ import annotations
 
 import threading
+from email.message import Message
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import pytest
 
 
-class RequestTracker:
-    def __init__(self):
-        self.trace_count = 0
+class Request:
+    path: str
+    headers: Message
 
-    def increment(self):
-        self.trace_count += 1
+    def __init__(self, path: str, headers : Message):
+        self.path = path
+        self.headers = headers
+
+class RequestTracker:
+    _requests: list[Request]
+
+    def __init__(self):
+        self._requests = []
+
+    def add(self, req : Request):
+        self._requests.append(req)
 
     def get_count(self):
-        return self.trace_count
+        return len(self._requests)
+
+    def get_requests(self):
+        return self._requests
 
     def reset(self):
-        self.trace_count = 0
+        self._requests = []
 
 class MockServer(BaseHTTPRequestHandler):
     tracker = RequestTracker()
@@ -30,7 +44,8 @@ class MockServer(BaseHTTPRequestHandler):
 
     def do_POST(self):
         if self.path == '/v1/traces':
-            self.tracker.increment()
+            req = Request(self.path, self.headers)
+            self.tracker.add(req)
             self.send_response(200)
         else:
             self.send_response(404)

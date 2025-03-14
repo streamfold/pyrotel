@@ -78,6 +78,40 @@ def test_client_connect_grpc(mock_server):
 
     assert MockServer.tracker.get_count() == 1
 
+def test_client_custom_headers(mock_server):
+    addr = mock_server.address()
+
+    client = Client(
+        enabled = True,
+        exporter = OTLPExporter(
+            endpoint = f"http://{addr[0]}:{addr[1]}",
+            protocol = "http",
+            custom_headers=[
+                "Authorization=Bearer 12345",
+                "X-Dataset=foobar",
+            ]
+        )
+    )
+    client.start()
+
+    os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = "http://localhost:4318"
+    os.environ["OTEL_EXPORTER_OTLP_PROTOCOL"] = "http"
+
+    provider = new_http_provider()
+    tracer = new_tracer(provider, "pyrotel.test")
+
+    with tracer.start_as_current_span("test_client_active"):
+        pass
+    provider.shutdown()
+
+    wait_until(2, 0.1, lambda: MockServer.tracker.get_count() > 0)
+
+    assert MockServer.tracker.get_count() == 1
+
+    req = MockServer.tracker.get_requests()[0]
+    assert req.headers.get("Authorization") == "Bearer 12345"
+    assert req.headers.get("X-Dataset") == "foobar"
+
 def test_client_env_config(mock_server):
     addr = mock_server.address()
 
