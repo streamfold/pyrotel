@@ -231,6 +231,8 @@ if os.environ.get("ROTEL_ENABLED") == "true":
     trace.set_tracer_provider(provider)
 ```
 
+For the complete example, see the [hello world](https://github.com/streamfold/pyrotel-hello-world) application.
+
 ## Debugging
 
 If you set the option `debug_log` to `["traces"]`, or the environment variable `ROTEL_DEBUG_LOG=traces`, then rotel will log a summary to the log file `/tmp/rotel-agent.log` each time it processes trace spans. You can add also specify *metrics* to debug metrics.   
