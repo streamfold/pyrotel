@@ -12,6 +12,7 @@ class OTLPExporterEndpoint(TypedDict, total=False):
     endpoint: str | None
     protocol: str | None
     custom_headers: list[str] | None
+    headers: dict[str, str] | None
     compression: str | None
     request_timeout: str | None
     retry_initial_backoff: str | None
@@ -29,6 +30,7 @@ class OTLPExporter(TypedDict, total=False):
     endpoint: str | None
     protocol: str | None
     custom_headers: list[str] | None
+    headers: dict[str, str] | None
     compression: str | None
     request_timeout: str | None
     retry_initial_backoff: str | None
@@ -123,7 +125,7 @@ class Config:
         endpoint = endpoint_class(
             endpoint = rotel_env(pfx + "ENDPOINT"),
             protocol = as_lower(rotel_env(pfx + "PROTOCOL")),
-            custom_headers = as_list(rotel_env(pfx + "CUSTOM_HEADERS")),
+            headers = as_dict(rotel_env(pfx + "CUSTOM_HEADERS")),
             compression = as_lower(rotel_env(pfx + "COMPRESSION")),
             request_timeout = rotel_env(pfx + "REQUEST_TIMEOUT"),
             retry_initial_backoff = rotel_env(pfx + "RETRY_INITIAL_BACKOFF"),
@@ -173,6 +175,11 @@ class Config:
             if value is not None:
                 if isinstance(value, list):
                     value = ",".join(value)
+                if isinstance(value, dict):
+                    hdr_list = []
+                    for k, v in value.items():
+                        hdr_list.append(f"{k}={v}")
+                    value = ",".join(hdr_list)
                 rotel_key = rotel_expand_env_key(key)
                 spawn_env[rotel_key] = str(value)
 
@@ -204,7 +211,7 @@ def _set_otlp_exporter_agent_env(updates: dict, endpoint_type: str | None, expor
     updates.update({
         pfx + "ENDPOINT": exporter.get("endpoint"),
         pfx + "PROTOCOL": exporter.get("protocol"),
-        pfx + "CUSTOM_HEADERS": exporter.get("custom_headers"),
+        pfx + "CUSTOM_HEADERS": exporter.get("headers", exporter.get("custom_headers")),
         pfx + "COMPRESSION": exporter.get("compression"),
         pfx + "REQUEST_TIMEOUT": exporter.get("request_timeout"),
         pfx + "RETRY_INITIAL_BACKOFF": exporter.get("retry_initial_backoff"),
@@ -217,6 +224,19 @@ def _set_otlp_exporter_agent_env(updates: dict, endpoint_type: str | None, expor
         pfx + "TLS_CA_FILE": exporter.get("tls_ca_file"),
         pfx + "TLS_SKIP_VERIFY": exporter.get("tls_skip_verify"),
     })
+
+def as_dict(value: str | None) -> dict[str, str] | None:
+    if value is None:
+        return None
+
+    headers = {}
+    for hdr_kv in value.split(","):
+        hdr_split = hdr_kv.split("=", 1)
+        if len(hdr_split) != 2:
+            continue
+        headers[hdr_split[0]] = hdr_split[1]
+
+    return headers
 
 def as_lower(value: str | None) -> str | None:
     if value is not None:

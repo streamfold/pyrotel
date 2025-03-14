@@ -33,7 +33,7 @@ def test_config_env_basic():
     assert cfg.is_active()
     assert cfg.options["otlp_grpc_endpoint"] == "localhost:5317"
     assert cfg.options["exporter"]["endpoint"] == "http://foo.example.com:4317"
-    assert cfg.options["exporter"]["custom_headers"] == list(["api=1234", "team=8793"])
+    assert cfg.options["exporter"]["headers"] == {"api": "1234", "team": "8793"}
     assert cfg.options["exporter"]["tls_skip_verify"]
 
     agent = cfg.build_agent_environment()
@@ -128,6 +128,57 @@ def test_config_custom_endpoints_from_env():
     assert cl.config.options["exporter"]["traces"]["endpoint"] == "http://foo2.example.com:4318/api/v1/traces"
     assert cl.config.options["exporter"]["metrics"]["endpoint"] == "http://foo2.example.com:4318/api/v1/metrics"
     assert cl.config.options["exporter"]["metrics"].get("batch_max_size") is None
+
+def test_config_custom_headers():
+    cl = Rotel(
+        enabled = True,
+        exporter = OTLPExporter(
+            endpoint = "http://foo2.example.com:4318",
+            headers = {
+                "Authorization": "Bearer 1234",
+                "X-Dataset": "foo",
+            }
+        ),
+    )
+
+    assert cl.config.is_active()
+    agent = cl.config.build_agent_environment()
+    assert agent["ROTEL_OTLP_EXPORTER_CUSTOM_HEADERS"] == "Authorization=Bearer 1234,X-Dataset=foo"
+
+    # headers take precedence
+    cl = Rotel(
+        enabled = True,
+        exporter = OTLPExporter(
+            endpoint = "http://foo2.example.com:4318",
+            custom_headers = [
+                "Authorization=Bearer 1234",
+                "X-Dataset=foo",
+            ],
+            headers = {
+                "Authorization": "Bearer 4567",
+                "X-Dataset": "bar",
+            }
+        ),
+    )
+
+    assert cl.config.is_active()
+    agent = cl.config.build_agent_environment()
+    assert agent["ROTEL_OTLP_EXPORTER_CUSTOM_HEADERS"] == "Authorization=Bearer 4567,X-Dataset=bar"
+
+    # test parsing from environ
+    os.environ["ROTEL_OTLP_EXPORTER_CUSTOM_HEADERS"] = "Authorization=Bearer 9876,X-Dataset=blah=foo,X-Team=dev"
+    cl = Rotel(
+        enabled = True,
+        exporter = OTLPExporter(
+            endpoint = "http://foo2.example.com:4318",
+        ),
+    )
+
+    assert cl.config.is_active()
+    assert cl.config.options["exporter"]["headers"] == {"Authorization": "Bearer 9876", "X-Dataset": "blah=foo", "X-Team": "dev"}
+
+    agent = cl.config.build_agent_environment()
+    assert agent["ROTEL_OTLP_EXPORTER_CUSTOM_HEADERS"] == "Authorization=Bearer 9876,X-Dataset=blah=foo,X-Team=dev"
 
 
 def test_config_validation():

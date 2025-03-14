@@ -86,10 +86,10 @@ def test_client_custom_headers(mock_server):
         exporter = OTLPExporter(
             endpoint = f"http://{addr[0]}:{addr[1]}",
             protocol = "http",
-            custom_headers=[
-                "Authorization=Bearer 12345",
-                "X-Dataset=foobar",
-            ]
+            headers = {
+                "Authorization": "Bearer 12345",
+                "X-Dataset": "foobar",
+            }
         )
     )
     client.start()
