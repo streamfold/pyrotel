@@ -23,12 +23,9 @@ jobs:
       - name: Install Hatch
         run: pipx install hatch
 
-      - name: Build
+      - name: Run tests
         env:
           GITHUB_API_TOKEN: ${{ secrets.AGENT_DOWNLOAD_TOKEN }}
-        run: hatch run build:me
-
-      - name: Run tests
         run: |
           PYTHON_ENV=$(echo ${{ matrix.python-version }} | sed -e 's/\.//')
           hatch run test.py${PYTHON_ENV}:pytest

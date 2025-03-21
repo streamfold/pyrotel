@@ -25,5 +25,3 @@ tar -O -zxf $ROTEL_FILE rotel > $ROTEL_OUT_FILE
 rm $ROTEL_FILE
 
 chmod +x $ROTEL_OUT_FILE
-
-echo "Rotel successfully downloaded to ${ROTEL_OUT_FILE}: `ls -l ${ROTEL_OUT_FILE}`"
