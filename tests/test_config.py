@@ -50,7 +50,7 @@ def test_config_from_options():
         exporter = OTLPExporter(
             endpoint = "http://foo2.example.com:4317",
             compression = "gzip",
-            custom_headers = ["api-key=super-secret", "team=dev"]
+            headers = {"api-key": "super-secret", "team":"dev"}
         )
     )
 
@@ -59,7 +59,6 @@ def test_config_from_options():
 
     exporter = cl.config.options["exporter"]
     assert exporter["endpoint"] == "http://foo2.example.com:4317"
-    assert exporter["custom_headers"] == ["api-key=super-secret", "team=dev"]
 
     agent = cl.config.build_agent_environment()
     assert agent["ROTEL_OTLP_GRPC_ENDPOINT"] == "localhost:5317"
@@ -144,26 +143,6 @@ def test_config_custom_headers():
     assert cl.config.is_active()
     agent = cl.config.build_agent_environment()
     assert agent["ROTEL_OTLP_EXPORTER_CUSTOM_HEADERS"] == "Authorization=Bearer 1234,X-Dataset=foo"
-
-    # headers take precedence
-    cl = Rotel(
-        enabled = True,
-        exporter = OTLPExporter(
-            endpoint = "http://foo2.example.com:4318",
-            custom_headers = [
-                "Authorization=Bearer 1234",
-                "X-Dataset=foo",
-            ],
-            headers = {
-                "Authorization": "Bearer 4567",
-                "X-Dataset": "bar",
-            }
-        ),
-    )
-
-    assert cl.config.is_active()
-    agent = cl.config.build_agent_environment()
-    assert agent["ROTEL_OTLP_EXPORTER_CUSTOM_HEADERS"] == "Authorization=Bearer 4567,X-Dataset=bar"
 
     # test parsing from environ
     os.environ["ROTEL_OTLP_EXPORTER_CUSTOM_HEADERS"] = "Authorization=Bearer 9876,X-Dataset=blah=foo,X-Team=dev"

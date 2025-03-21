@@ -11,7 +11,6 @@ from .error import _errlog
 class OTLPExporterEndpoint(TypedDict, total=False):
     endpoint: str | None
     protocol: str | None
-    custom_headers: list[str] | None
     headers: dict[str, str] | None
     compression: str | None
     request_timeout: str | None
@@ -29,7 +28,6 @@ class OTLPExporterEndpoint(TypedDict, total=False):
 class OTLPExporter(TypedDict, total=False):
     endpoint: str | None
     protocol: str | None
-    custom_headers: list[str] | None
     headers: dict[str, str] | None
     compression: str | None
     request_timeout: str | None
@@ -45,6 +43,7 @@ class OTLPExporter(TypedDict, total=False):
 
     traces: OTLPExporterEndpoint | None
     metrics: OTLPExporterEndpoint | None
+    logs: OTLPExporterEndpoint | None
 
 class Options(TypedDict, total=False):
     enabled: bool | None
@@ -56,6 +55,7 @@ class Options(TypedDict, total=False):
     otlp_http_endpoint: str | None
     otlp_receiver_traces_disabled: bool | None
     otlp_receiver_metrics_disabled: bool | None
+    otlp_receiver_logs_disabled: bool | None
     exporter: OTLPExporter | None
 
 
@@ -93,6 +93,7 @@ class Config:
             otlp_http_endpoint = rotel_env("OTLP_HTTP_ENDPOINT"),
             otlp_receiver_traces_disabled = as_bool(rotel_env("OTLP_RECEIVER_TRACES_DISABLED")),
             otlp_receiver_metrics_disabled = as_bool(rotel_env("OTLP_RECEIVER_METRICS_DISABLED")),
+            otlp_receiver_logs_disabled = as_bool(rotel_env("OTLP_RECEIVER_LOGS_DISABLED")),
         )
 
         exporter_type = as_lower(rotel_env("EXPORTER"))
@@ -109,6 +110,9 @@ class Config:
             endpoint = Config._load_otlp_exporter_options_from_env("METRICS", OTLPExporterEndpoint)
             if endpoint is not None:
                 exporter["metrics"] = endpoint
+            endpoint = Config._load_otlp_exporter_options_from_env("LOGS", OTLPExporterEndpoint)
+            if endpoint is not None:
+                exporter["logs"] = endpoint
 
         final_env = Options()
 
@@ -158,6 +162,7 @@ class Config:
             "OTLP_HTTP_ENDPOINT": opts.get("otlp_http_endpoint"),
             "OTLP_RECEIVER_TRACES_DISABLED": opts.get("otlp_receiver_traces_disabled"),
             "OTLP_RECEIVER_METRICS_DISABLED": opts.get("otlp_receiver_metrics_disabled"),
+            "OTLP_RECEIVER_LOGS_DISABLED": opts.get("otlp_receiver_logs_disabled"),
         }
         exporter = opts.get("exporter")
         if exporter is not None:
@@ -170,6 +175,10 @@ class Config:
             metrics = exporter.get("metrics")
             if metrics is not None:
                 _set_otlp_exporter_agent_env(updates, "METRICS", metrics)
+
+            logs = exporter.get("logs")
+            if logs is not None:
+                _set_otlp_exporter_agent_env(updates, "LOGS", metrics)
 
         for key, value in updates.items():
             if value is not None:
@@ -211,7 +220,7 @@ def _set_otlp_exporter_agent_env(updates: dict, endpoint_type: str | None, expor
     updates.update({
         pfx + "ENDPOINT": exporter.get("endpoint"),
         pfx + "PROTOCOL": exporter.get("protocol"),
-        pfx + "CUSTOM_HEADERS": exporter.get("headers", exporter.get("custom_headers")),
+        pfx + "CUSTOM_HEADERS": exporter.get("headers"),
         pfx + "COMPRESSION": exporter.get("compression"),
         pfx + "REQUEST_TIMEOUT": exporter.get("request_timeout"),
         pfx + "RETRY_INITIAL_BACKOFF": exporter.get("retry_initial_backoff"),
