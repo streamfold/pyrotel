@@ -8,11 +8,11 @@ Python package for the Rotel lightweight OpenTelemetry collector.
 
 This package provides an embedded OpenTelemetry collector, built on the lightweight Rotel collector. When started, it spawns a background daemon that accepts OpenTelemetry metrics, traces, and logs. Designed for minimal overhead, Rotel reduces resource consumption while simplifying telemetry collection and processing in complex Python applications—without requiring additional sidecar containers.
 
-| Telemetry Type | Support     |
-|----------------|-------------|
-| Metrics        | Alpha       |
-| Traces         | Alpha       |
-| Logs           | Coming soon |
+| Telemetry Type | Support |
+|----------------|---------|
+| Metrics        | Alpha   |
+| Traces         | Alpha   |
+| Logs           | Alpha   |
 
 ## How it works
 
@@ -81,18 +81,19 @@ To set the endpoint the OpenTelemetry SDK will use, set the following environmen
 
 This is the full list of options and their environment variable alternatives. Any defaults left blank in the table are either False or None.
 
-| Option Name                    | Type         | Environ                              | Default              | Options         |
-|--------------------------------|--------------|--------------------------------------|----------------------|-----------------|
-| enabled                        | bool         | ROTEL_ENABLED                        |                      |                 |
-| pid_file                       | str          | ROTEL_PID_FILE                       | /tmp/rotel-agent.pid |                 |
-| log_file                       | str          | ROTEL_LOG_FILE                       | /tmp/rotel-agent.log |                 |
-| log_format                     | str          | ROTEL_LOG_FORMAT                     | text                 | json, text      |
-| debug_log                      | list[str]    | ROTEL_DEBUG_LOG                      |                      | traces, metrics |
-| otlp_grpc_endpoint             | str          | ROTEL_OTLP_GRPC_ENDPOINT             | localhost:4317       |                 |
-| otlp_http_endpoint             | str          | ROTEL_OTLP_HTTP_ENDPOINT             | localhost:4318       |                 |
-| otlp_receiver_traces_disabled  | bool         | ROTEL_OTLP_RECEIVER_TRACES_DISABLED  |                      |                 |
-| otlp_receiver_metrics_disabled | bool         | ROTEL_OTLP_RECEIVER_METRICS_DISABLED |                      |                 |
-| exporter                       | OTLPExporter |                                      |                      |                 |
+| Option Name                    | Type         | Environ                              | Default              | Options               |
+|--------------------------------|--------------|--------------------------------------|----------------------|-----------------------|
+| enabled                        | bool         | ROTEL_ENABLED                        |                      |                       |
+| pid_file                       | str          | ROTEL_PID_FILE                       | /tmp/rotel-agent.pid |                       |
+| log_file                       | str          | ROTEL_LOG_FILE                       | /tmp/rotel-agent.log |                       |
+| log_format                     | str          | ROTEL_LOG_FORMAT                     | text                 | json, text            |
+| debug_log                      | list[str]    | ROTEL_DEBUG_LOG                      |                      | traces, metrics, logs |
+| otlp_grpc_endpoint             | str          | ROTEL_OTLP_GRPC_ENDPOINT             | localhost:4317       |                       |
+| otlp_http_endpoint             | str          | ROTEL_OTLP_HTTP_ENDPOINT             | localhost:4318       |                       |
+| otlp_receiver_traces_disabled  | bool         | ROTEL_OTLP_RECEIVER_TRACES_DISABLED  |                      |                       |
+| otlp_receiver_metrics_disabled | bool         | ROTEL_OTLP_RECEIVER_METRICS_DISABLED |                      |                       |
+| otlp_receiver_logs_disabled    | bool         | ROTEL_OTLP_RECEIVER_LOGS_DISABLED    |                      |                       |
+| exporter                       | OTLPExporter |                                      |                      |                       |
 
 The OTLPExporter can be enabled with the following options.
 
@@ -142,6 +143,7 @@ rotel.start()
 Or, you can override the endpoints using environment variables:
 * `ROTEL_OTLP_EXPORTER_TRACES_ENDPOINT=http://foo.example.com:4318/api/otlp/traces`
 * `ROTEL_OTLP_EXPORTER_METRICS_ENDPOINT=http://foo.example.com:4318/api/otlp/metrics`
+* `ROTEL_OTLP_EXPORTER_LOGS_ENDPOINT=http://foo.example.com:4318/api/otlp/logs`
 
 All the OTLP exporter settings can be overridden per endpoint type (traces, metrics, logs). Any value that is not overridden will fall back to the top-level exporter configuration or the default.
 
@@ -235,7 +237,7 @@ For the complete example, see the [hello world](https://github.com/streamfold/py
 
 ## Debugging
 
-If you set the option `debug_log` to `["traces"]`, or the environment variable `ROTEL_DEBUG_LOG=traces`, then rotel will log a summary to the log file `/tmp/rotel-agent.log` each time it processes trace spans. You can add also specify *metrics* to debug metrics.   
+If you set the option `debug_log` to `["traces"]`, or the environment variable `ROTEL_DEBUG_LOG=traces`, then rotel will log a summary to the log file `/tmp/rotel-agent.log` each time it processes trace spans. You can add also specify *metrics* to debug metrics and *logs* to debug logs.   
 
 ## FAQ
 
