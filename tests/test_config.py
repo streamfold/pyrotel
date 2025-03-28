@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 
 from rotel.client import Client as Rotel
-from src.rotel.config import Config, Options, OTLPExporter, OTLPExporterEndpoint
+from src.rotel.config import Config, Options, OTLPExporterEndpoint
 
 
 def test_defaults():

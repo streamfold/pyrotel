@@ -19,7 +19,7 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 
 from src.rotel.agent import agent
 from src.rotel.client import Client
-from src.rotel.config import Config, Options, OTLPExporter
+from src.rotel.config import Config, Options
 from tests.utils import wait_until
 from tests.utils_server import MockServer
 
