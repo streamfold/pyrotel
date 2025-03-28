@@ -93,7 +93,7 @@ This is the full list of options and their environment variable alternatives. An
 | otlp_receiver_traces_disabled  | bool                            | ROTEL_OTLP_RECEIVER_TRACES_DISABLED  |                      |                       |
 | otlp_receiver_metrics_disabled | bool                            | ROTEL_OTLP_RECEIVER_METRICS_DISABLED |                      |                       |
 | otlp_receiver_logs_disabled    | bool                            | ROTEL_OTLP_RECEIVER_LOGS_DISABLED    |                      |                       |
-| exporter                       | OTLPExporter \| DatadogExporter |                                      | otlp                 | otlp, datadog         |
+| exporter                       | OTLPExporter \| DatadogExporter |                                      |                      |                       |
 
 To construct an OTLP exporter, use the method `Config.otlp_exporter()` with the following options.
 
