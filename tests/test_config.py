@@ -47,7 +47,7 @@ def test_config_from_options():
     cl = Rotel(
         enabled = True,
         otlp_grpc_endpoint = "localhost:5317",
-        exporter = OTLPExporter(
+        exporter = Config.otlp_exporter(
             endpoint = "http://foo2.example.com:4317",
             compression = "gzip",
             headers = {"api-key": "super-secret", "team":"dev"}
@@ -74,7 +74,7 @@ def test_config_env_override():
 
     cl = Rotel(
         enabled = True,
-        exporter = OTLPExporter(
+        exporter = Config.otlp_exporter(
             endpoint = "http://foo2.example.com:4318",
         )
     )
@@ -93,7 +93,7 @@ def test_config_env_override():
 def test_config_custom_endpoints():
     cl = Rotel(
         enabled = True,
-        exporter = OTLPExporter(
+        exporter = Config.otlp_exporter(
             traces = OTLPExporterEndpoint(
                 endpoint = "http://foo2.example.com:4318/api/v1/traces",
                 compression = "none",
@@ -111,6 +111,30 @@ def test_config_custom_endpoints():
     assert agent["ROTEL_OTLP_EXPORTER_TRACES_COMPRESSION"] == "none"
     assert agent["ROTEL_OTLP_EXPORTER_METRICS_ENDPOINT"] == "http://foo2.example.com:4318/api/v1/metrics"
 
+def test_datadog_exporter():
+    cl = Rotel(
+        enabled = True,
+        exporter = Config.datadog_exporter(
+            region = "us3",
+            api_key = "2345",
+        )
+    )
+
+    assert cl.config.is_active()
+
+    agent = cl.config.build_agent_environment()
+    assert agent["ROTEL_EXPORTER"] == "datadog"
+    assert agent["ROTEL_DATADOG_EXPORTER_REGION"] == "us3"
+    assert agent["ROTEL_DATADOG_EXPORTER_API_KEY"] == "2345"
+
+    cl = Rotel(
+        enabled = True,
+        exporter = Config.datadog_exporter(
+            region = "us3",
+        )
+    )
+    assert not cl.config.is_active()
+
 def test_config_custom_endpoints_from_env():
     os.environ["ROTEL_OTLP_EXPORTER_TRACES_ENDPOINT"] = "http://foo2.example.com:4318/api/v1/traces"
     os.environ["ROTEL_OTLP_EXPORTER_METRICS_ENDPOINT"] = "http://foo2.example.com:4318/api/v1/metrics"
@@ -118,7 +142,7 @@ def test_config_custom_endpoints_from_env():
 
     cl = Rotel(
         enabled = True,
-        exporter = OTLPExporter(
+        exporter = Config.otlp_exporter(
             endpoint = "http://foo2.example.com:4318",
         ),
     )
@@ -131,7 +155,7 @@ def test_config_custom_endpoints_from_env():
 def test_config_custom_headers():
     cl = Rotel(
         enabled = True,
-        exporter = OTLPExporter(
+        exporter = Config.otlp_exporter(
             endpoint = "http://foo2.example.com:4318",
             headers = {
                 "Authorization": "Bearer 1234",
@@ -148,7 +172,7 @@ def test_config_custom_headers():
     os.environ["ROTEL_OTLP_EXPORTER_CUSTOM_HEADERS"] = "Authorization=Bearer 9876,X-Dataset=blah=foo,X-Team=dev"
     cl = Rotel(
         enabled = True,
-        exporter = OTLPExporter(
+        exporter = Config.otlp_exporter(
             endpoint = "http://foo2.example.com:4318",
         ),
     )
@@ -173,7 +197,7 @@ def test_config_validation():
 
     cfg = Config(Options(
         enabled = True,
-        exporter = OTLPExporter(
+        exporter = Config.otlp_exporter(
             endpoint = "http://foo.example.com:4317",
             protocol = "grpc",
             batch_max_size = 4096,
@@ -184,7 +208,7 @@ def test_config_validation():
     # invalid protocol
     cfg = Config(Options(
         enabled = True,
-        exporter = OTLPExporter(
+        exporter = Config.otlp_exporter(
             endpoint = "http://foo.example.com:4317",
             protocol = "unknown"
         )
@@ -195,7 +219,7 @@ def test_config_validation():
     cfg = Config(Options(
         enabled = True,
         log_format = "csv",
-        exporter = OTLPExporter(
+        exporter = Config.otlp_exporter(
             endpoint = "http://foo.example.com:4317",
         )
     ))
