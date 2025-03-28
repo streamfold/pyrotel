@@ -6,7 +6,7 @@ Python package for the Rotel lightweight OpenTelemetry collector.
 
 ## Description
 
-This package provides an embedded OpenTelemetry collector, built on the lightweight Rotel collector. When started, it spawns a background daemon that accepts OpenTelemetry metrics, traces, and logs. Designed for minimal overhead, Rotel reduces resource consumption while simplifying telemetry collection and processing in complex Python applications—without requiring additional sidecar containers.
+This package provides an embedded OpenTelemetry collector, built on the lightweight [Rotel collector](https://github.com/streamfold/rotel). When started, it spawns a background daemon that accepts OpenTelemetry metrics, traces, and logs. Designed for minimal overhead, Rotel reduces resource consumption while simplifying telemetry collection and processing in complex Python applications—without requiring additional sidecar containers.
 
 | Telemetry Type | Support |
 |----------------|---------|
