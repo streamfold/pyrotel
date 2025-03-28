@@ -47,6 +47,10 @@ class MockServer(BaseHTTPRequestHandler):
             req = Request(self.path, self.headers)
             self.tracker.add(req)
             self.send_response(200)
+        elif self.path == '/api/v0.2/traces': # datadog
+            req = Request(self.path, self.headers)
+            self.tracker.add(req)
+            self.send_response(200)
         else:
             self.send_response(404)
         self.end_headers()

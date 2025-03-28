@@ -19,7 +19,7 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 
 from src.rotel.agent import agent
 from src.rotel.client import Client
-from src.rotel.config import Config, Options, OTLPExporter
+from src.rotel.config import Config, Options
 from tests.utils import wait_until
 from tests.utils_server import MockServer
 
@@ -34,7 +34,7 @@ def test_client_connect_http(mock_server):
 
     client = Client(
         enabled = True,
-        exporter = OTLPExporter(
+        exporter = Config.otlp_exporter(
             endpoint = f"http://{addr[0]}:{addr[1]}",
             protocol = "http"
         )
@@ -60,7 +60,7 @@ def test_client_connect_grpc(mock_server):
 
     client = Client(
         enabled = True,
-        exporter = OTLPExporter(
+        exporter = Config.otlp_exporter(
             endpoint = f"http://{addr[0]}:{addr[1]}",
             protocol = "http"
         )
@@ -83,7 +83,7 @@ def test_client_custom_headers(mock_server):
 
     client = Client(
         enabled = True,
-        exporter = OTLPExporter(
+        exporter = Config.otlp_exporter(
             endpoint = f"http://{addr[0]}:{addr[1]}",
             protocol = "http",
             headers = {
@@ -112,6 +112,35 @@ def test_client_custom_headers(mock_server):
     assert req.headers.get("Authorization") == "Bearer 12345"
     assert req.headers.get("X-Dataset") == "foobar"
 
+def test_client_datadog(mock_server):
+    addr = mock_server.address()
+
+    client = Client(
+        enabled = True,
+        exporter = Config.datadog_exporter(
+            custom_endpoint= f"http://{addr[0]}:{addr[1]}",
+            api_key = "987654",
+        )
+    )
+    client.start()
+
+    os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = "http://localhost:4318"
+    os.environ["OTEL_EXPORTER_OTLP_PROTOCOL"] = "http"
+
+    provider = new_http_provider()
+    tracer = new_tracer(provider, "pyrotel.test")
+
+    with tracer.start_as_current_span("test_client_active"):
+        pass
+    provider.shutdown()
+
+    wait_until(2, 0.1, lambda: MockServer.tracker.get_count() > 0)
+
+    assert MockServer.tracker.get_count() == 1
+
+    req = MockServer.tracker.get_requests()[0]
+    assert req.headers.get("DD-API-KEY") == "987654"
+
 def test_client_env_config(mock_server):
     addr = mock_server.address()
 
@@ -139,7 +168,7 @@ def test_client_double_start(mock_server):
 
     opts = Options(
         enabled = True,
-        exporter = OTLPExporter(
+        exporter = Config.otlp_exporter(
             endpoint = f"http://{addr[0]}:{addr[1]}",
             protocol = "http"
         )

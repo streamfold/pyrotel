@@ -5,6 +5,12 @@ from __future__ import annotations
 import os
 from typing import TypedDict, cast
 
+
+try:
+    from typing import Unpack
+except ImportError:
+    from typing_extensions import Unpack
+
 from .error import _errlog
 
 
@@ -26,6 +32,7 @@ class OTLPExporterEndpoint(TypedDict, total=False):
 
 # TODO: when we have more, include a key that defines this exporter type
 class OTLPExporter(TypedDict, total=False):
+    _type: str | None
     endpoint: str | None
     protocol: str | None
     headers: dict[str, str] | None
@@ -45,6 +52,12 @@ class OTLPExporter(TypedDict, total=False):
     metrics: OTLPExporterEndpoint | None
     logs: OTLPExporterEndpoint | None
 
+class DatadogExporter(TypedDict, total=False):
+    _type: str | None # set with builder method
+    region: str | None
+    custom_endpoint: str | None
+    api_key: str | None
+
 class Options(TypedDict, total=False):
     enabled: bool | None
     pid_file: str | None
@@ -56,8 +69,7 @@ class Options(TypedDict, total=False):
     otlp_receiver_traces_disabled: bool | None
     otlp_receiver_metrics_disabled: bool | None
     otlp_receiver_logs_disabled: bool | None
-    exporter: OTLPExporter | None
-
+    exporter: OTLPExporter | DatadogExporter | None
 
 class Config:
     DEFAULT_OPTIONS = Options(
@@ -80,6 +92,18 @@ class Config:
 
     def is_active(self) -> bool:
         return self.options["enabled"] and self.valid
+
+    @staticmethod
+    def datadog_exporter(**options: Unpack[DatadogExporter]) -> DatadogExporter:
+        """Construct a Datadog exporter config"""
+        options["_type"] = "datadog"
+        return options
+
+    @staticmethod
+    def otlp_exporter(**options: Unpack[OTLPExporter]) -> OTLPExporter:
+        """Construct an OTLP exporter config"""
+        options["_type"] = "otlp"
+        return options
 
     @staticmethod
     def _load_options_from_env() -> Options:
@@ -113,6 +137,15 @@ class Config:
             endpoint = Config._load_otlp_exporter_options_from_env("LOGS", OTLPExporterEndpoint)
             if endpoint is not None:
                 exporter["logs"] = endpoint
+        if exporter_type == "datadog":
+            pfx = "DATADOG_EXPORTER_"
+            exporter = DatadogExporter(
+                _type = "datadog",
+                region = rotel_env(pfx + "REGION"),
+                custom_endpoint = rotel_env(pfx + "CUSTOM_ENDPOINT"),
+                api_key = rotel_env(pfx + "API_KEY"),
+            )
+            env["exporter"] = exporter
 
         final_env = Options()
 
@@ -148,7 +181,6 @@ class Config:
                 return endpoint
         return None
 
-
     def build_agent_environment(self) -> dict[str,str]:
         opts = self.options
 
@@ -166,19 +198,7 @@ class Config:
         }
         exporter = opts.get("exporter")
         if exporter is not None:
-            _set_otlp_exporter_agent_env(updates, None, exporter)
-
-            traces = exporter.get("traces")
-            if traces is not None:
-                _set_otlp_exporter_agent_env(updates, "TRACES", traces)
-
-            metrics = exporter.get("metrics")
-            if metrics is not None:
-                _set_otlp_exporter_agent_env(updates, "METRICS", metrics)
-
-            logs = exporter.get("logs")
-            if logs is not None:
-                _set_otlp_exporter_agent_env(updates, "LOGS", metrics)
+            _set_exporter_agent_env(updates, exporter)
 
         for key, value in updates.items():
             if value is not None:
@@ -201,10 +221,16 @@ class Config:
 
         exporter = self.options.get("exporter")
         if exporter is not None:
-            protocol = exporter.get("protocol")
-            if protocol is not None and protocol not in {'grpc', 'http'}:
-                _errlog("exporter protocol must be 'grpc' or 'http'")
-                return False
+            if exporter.get("_type") == "datadog":
+                api_key = exporter.get("api_key")
+                if not api_key:
+                    _errlog("Datadog exporter api_key must be set")
+                    return False
+            else:
+                protocol = exporter.get("protocol")
+                if protocol is not None and protocol not in {'grpc', 'http'}:
+                    _errlog("OTLP exporter protocol must be 'grpc' or 'http'")
+                    return False
 
         log_format = self.options.get("log_format")
         if log_format is not None and log_format not in {'json', 'text'}:
@@ -212,6 +238,39 @@ class Config:
             return False
 
         return True
+
+def _set_exporter_agent_env(updates: dict, exporter: OTLPExporter | DatadogExporter) -> None:
+    exp_type = cast(dict, exporter).get("_type")
+    if exp_type == "datadog":
+        _set_datadog_exporter_agent_env(updates, exporter)
+        return
+
+    #
+    # If not Datadog, assume OTLP exporter
+    #
+    _set_otlp_exporter_agent_env(updates, None, exporter)
+
+    traces = exporter.get("traces")
+    if traces is not None:
+        _set_otlp_exporter_agent_env(updates, "TRACES", traces)
+
+    metrics = exporter.get("metrics")
+    if metrics is not None:
+        _set_otlp_exporter_agent_env(updates, "METRICS", metrics)
+
+    logs = exporter.get("logs")
+    if logs is not None:
+        _set_otlp_exporter_agent_env(updates, "LOGS", metrics)
+
+def _set_datadog_exporter_agent_env(updates: dict, exporter: DatadogExporter) -> None:
+    pfx = "DATADOG_EXPORTER_"
+
+    updates.update({
+        "EXPORTER": "datadog", # We must opt in to Datadog
+        pfx + "REGION": exporter.get("region"),
+        pfx + "CUSTOM_ENDPOINT": exporter.get("custom_endpoint"),
+        pfx + "API_KEY": exporter.get("api_key"),
+    })
 
 def _set_otlp_exporter_agent_env(updates: dict, endpoint_type: str | None, exporter: OTLPExporter | OTLPExporterEndpoint | None) -> None:
     pfx = "OTLP_EXPORTER_"

@@ -19,7 +19,7 @@ def run_relative(filename: str) -> dict[str, Any]:
 PLATFORM_TAGS = run_relative("platform.py")["PLATFORM_TAGS"]
 PLATFORM_FILE_ARCH = run_relative("platform.py")["PLATFORM_FILE_ARCH"]
 
-ROTEL_RELEASE="v0.0.1-alpha0"
+ROTEL_RELEASE="v0.0.1-alpha1"
 
 def current_platform_arch():
     platform = sysconfig.get_platform()

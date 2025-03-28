@@ -6,7 +6,7 @@ Python package for the Rotel lightweight OpenTelemetry collector.
 
 ## Description
 
-This package provides an embedded OpenTelemetry collector, built on the lightweight Rotel collector. When started, it spawns a background daemon that accepts OpenTelemetry metrics, traces, and logs. Designed for minimal overhead, Rotel reduces resource consumption while simplifying telemetry collection and processing in complex Python applications—without requiring additional sidecar containers.
+This package provides an embedded OpenTelemetry collector, built on the lightweight [Rotel collector](https://github.com/streamfold/rotel). When started, it spawns a background daemon that accepts OpenTelemetry metrics, traces, and logs. Designed for minimal overhead, Rotel reduces resource consumption while simplifying telemetry collection and processing in complex Python applications—without requiring additional sidecar containers.
 
 | Telemetry Type | Support |
 |----------------|---------|
@@ -35,11 +35,11 @@ Add the `rotel` Python package to your project's dependencies. There are two app
 In the startup section of your `main.py` add the following code block. Replace the endpoint with the endpoint of your OpenTelemetry vendor and any required API KEY headers. 
 
 ```python
-from rotel import OTLPExporter, Rotel
+from rotel import Config, Rotel
 
 rotel = Rotel(
     enabled = True,
-    exporter = OTLPExporter(
+    exporter = Config.otlp_exporter(
         endpoint = "https://foo.example.com",
         headers = {
             "x-api-key" : settings.API_KEY,
@@ -81,21 +81,21 @@ To set the endpoint the OpenTelemetry SDK will use, set the following environmen
 
 This is the full list of options and their environment variable alternatives. Any defaults left blank in the table are either False or None.
 
-| Option Name                    | Type         | Environ                              | Default              | Options               |
-|--------------------------------|--------------|--------------------------------------|----------------------|-----------------------|
-| enabled                        | bool         | ROTEL_ENABLED                        |                      |                       |
-| pid_file                       | str          | ROTEL_PID_FILE                       | /tmp/rotel-agent.pid |                       |
-| log_file                       | str          | ROTEL_LOG_FILE                       | /tmp/rotel-agent.log |                       |
-| log_format                     | str          | ROTEL_LOG_FORMAT                     | text                 | json, text            |
-| debug_log                      | list[str]    | ROTEL_DEBUG_LOG                      |                      | traces, metrics, logs |
-| otlp_grpc_endpoint             | str          | ROTEL_OTLP_GRPC_ENDPOINT             | localhost:4317       |                       |
-| otlp_http_endpoint             | str          | ROTEL_OTLP_HTTP_ENDPOINT             | localhost:4318       |                       |
-| otlp_receiver_traces_disabled  | bool         | ROTEL_OTLP_RECEIVER_TRACES_DISABLED  |                      |                       |
-| otlp_receiver_metrics_disabled | bool         | ROTEL_OTLP_RECEIVER_METRICS_DISABLED |                      |                       |
-| otlp_receiver_logs_disabled    | bool         | ROTEL_OTLP_RECEIVER_LOGS_DISABLED    |                      |                       |
-| exporter                       | OTLPExporter |                                      |                      |                       |
+| Option Name                    | Type                            | Environ                              | Default              | Options               |
+|--------------------------------|---------------------------------|--------------------------------------|----------------------|-----------------------|
+| enabled                        | bool                            | ROTEL_ENABLED                        |                      |                       |
+| pid_file                       | str                             | ROTEL_PID_FILE                       | /tmp/rotel-agent.pid |                       |
+| log_file                       | str                             | ROTEL_LOG_FILE                       | /tmp/rotel-agent.log |                       |
+| log_format                     | str                             | ROTEL_LOG_FORMAT                     | text                 | json, text            |
+| debug_log                      | list[str]                       | ROTEL_DEBUG_LOG                      |                      | traces, metrics, logs |
+| otlp_grpc_endpoint             | str                             | ROTEL_OTLP_GRPC_ENDPOINT             | localhost:4317       |                       |
+| otlp_http_endpoint             | str                             | ROTEL_OTLP_HTTP_ENDPOINT             | localhost:4318       |                       |
+| otlp_receiver_traces_disabled  | bool                            | ROTEL_OTLP_RECEIVER_TRACES_DISABLED  |                      |                       |
+| otlp_receiver_metrics_disabled | bool                            | ROTEL_OTLP_RECEIVER_METRICS_DISABLED |                      |                       |
+| otlp_receiver_logs_disabled    | bool                            | ROTEL_OTLP_RECEIVER_LOGS_DISABLED    |                      |                       |
+| exporter                       | OTLPExporter \| DatadogExporter |                                      |                      |                       |
 
-The OTLPExporter can be enabled with the following options.
+To construct an OTLP exporter, use the method `Config.otlp_exporter()` with the following options.
 
 | Option Name            | Type           | Environ                                    | Default | Options      |
 |------------------------|----------------|--------------------------------------------|---------|--------------|
@@ -114,17 +114,30 @@ The OTLPExporter can be enabled with the following options.
 | tls_ca_file            | str            | ROTEL_OTLP_EXPORTER_TLS_CA_FILE            |         |              |
 | tls_skip_verify        | bool           | ROTEL_OTLP_EXPORTER_TLS_SKIP_VERIFY        |         |              |
 
+Rotel provides an experimental [Datadog exporter](https://github.com/streamfold/rotel/blob/main/src/exporters/datadog/README.md)
+that supports traces at the moment. To use it instead of the OTLP exporter,
+use the method `Config.datadog_exporter()` with the following options.
+
+| Option Name     | Type | Environ                                | Default | Options                |
+|-----------------|------|----------------------------------------|---------|------------------------|
+| region          | str  | ROTEL_DATADOG_EXPORTER_REGION          | us1     | us1, us3, us5, eu, ap1 |
+| custom_endpoint | str  | ROTEL_DATADOG_EXPORTER_CUSTOM_ENDPOINT |         |                        |
+| api_key         | str  | ROTEL_DATADOG_EXPORTER_API_KEY         |         |                        |
+
+When configuring Rotel with only environment variables, you must set `ROTEL_EXPORTER=datadog` in addition to the above
+environment variables.
+
 ### Endpoint overrides
 
 When using the OTLP exporter over HTTP, the exporter will append `/v1/traces`, `/v1/metrics`, or `/v1/logs` to the endpoint URL for traces, metrics, and logs respectively. If the service you are exporting telemetry data to does not support these standard URL paths, you can individually override them for traces, metrics, and logs.
 
 For example, to override the endpoint for traces and metrics you can do the following:
 ```python
-from rotel import OTLPExporter, OTLPExporterEndpoint, Rotel
+from rotel import Config, OTLPExporterEndpoint, Rotel
 
 rotel = Rotel(
     enabled = True,
-    exporter = OTLPExporter(
+    exporter = Config.otlp_exporter(
         headers = {
             "x-api-key": settings.API_KEY,
         },
@@ -174,7 +187,7 @@ The code sample depends on the following environment variables:
 ```python
 import os
 
-from rotel import Rotel, OTLPExporter
+from rotel import Config, Rotel
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
@@ -188,7 +201,7 @@ if os.environ.get("ROTEL_ENABLED") == "true":
     #
     # Configure Rotel to export to Axiom
     #
-    otlp_exporter = OTLPExporter(
+    otlp_exporter = Config.otlp_exporter(
         endpoint="https://api.axiom.co",
         protocol="http", # Axiom only supports HTTP
         headers={
@@ -234,6 +247,22 @@ if os.environ.get("ROTEL_ENABLED") == "true":
 ```
 
 For the complete example, see the [hello world](https://github.com/streamfold/pyrotel-hello-world) application.
+
+### Datadog exporter example
+
+To use the Datadog trace exporter instead, configure and start rotel as such:
+```python
+from rotel import Config, Rotel
+
+rotel = Rotel(
+    enabled = True,
+    exporter = Config.datadog_exporter(
+        region = "us1",
+        api_key = "1bde13d9cb1675c5ca8188c8c86066c9",
+    ),
+)
+rotel.start()
+```
 
 ## Debugging
 
