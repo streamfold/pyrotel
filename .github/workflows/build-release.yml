@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - "v*"
+    branches:
+      - "fix-distro-names"
 
 jobs:
   build_wheels:
@@ -29,21 +31,21 @@ jobs:
           name: pyrotel-wheels
           path: ./dist/*.whl
 
-  publish:
-    needs: [build_wheels]
-    runs-on: ubuntu-latest
-
-    environment: pypi
-    permissions:
-      id-token: write
-
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: pyrotel-wheels
-          path: dist
-          merge-multiple: true
-
-      - uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          verify-metadata: false
+#  publish:
+#    needs: [build_wheels]
+#    runs-on: ubuntu-latest
+#
+#    environment: pypi
+#    permissions:
+#      id-token: write
+#
+#    steps:
+#      - uses: actions/download-artifact@v4
+#        with:
+#          pattern: pyrotel-wheels
+#          path: dist
+#          merge-multiple: true
+#
+#      - uses: pypa/gh-action-pypi-publish@release/v1
+#        with:
+#          verify-metadata: false
