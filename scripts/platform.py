@@ -2,7 +2,7 @@
 
 PLATFORM_TAGS = {
     # MacOS builds
-    "arm64-darwin": "macosx_10_9_universal2.macosx_12_3_arm64",
+    "arm64-darwin": "macosx_12_3_arm64",
 
     # Glibc Linux builds
     # https://peps.python.org/pep-0600/#legacy-manylinux-tags
