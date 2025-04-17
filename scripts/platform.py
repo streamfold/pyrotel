@@ -6,8 +6,8 @@ PLATFORM_TAGS = {
 
     # Glibc Linux builds
     # https://peps.python.org/pep-0600/#legacy-manylinux-tags
-    "x86_64-linux": "manylinux2014_x86_64.manylinux_2_17_x86_64",
-    "aarch64-linux": "manylinux2014_aarch64.manylinux_2_17_aarch64",
+    "x86_64-linux": "manylinux_2_34_x86_64",
+    "aarch64-linux": "manylinux_2_34_aarch64",
 
     # "any": "any",
 }
