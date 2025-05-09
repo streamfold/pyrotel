@@ -139,6 +139,32 @@ def test_datadog_exporter():
     )
     assert not cl.config.is_active()
 
+def test_clickhouse_exporter():
+    cl = Rotel(
+        enabled = True,
+        exporter = Config.clickhouse_exporter(
+            endpoint = "https://aws-ch.example.com",
+            user = "default",
+            password = "1234",
+        )
+    )
+
+    assert cl.config.is_active()
+
+    agent = cl.config.build_agent_environment()
+    assert agent["ROTEL_EXPORTER"] == "clickhouse"
+    assert agent["ROTEL_CLICKHOUSE_EXPORTER_USER"] == "default"
+    assert agent["ROTEL_CLICKHOUSE_EXPORTER_PASSWORD"] == "1234"
+
+    cl = Rotel(
+        enabled = True,
+        exporter = Config.clickhouse_exporter(
+            user = "default",
+            password = "1234",
+        )
+    )
+    assert not cl.config.is_active()
+
 def test_config_invalid_int_no_error():
     os.environ["ROTEL_BATCH_MAX_SIZE"] = "abc" # should not error
 
