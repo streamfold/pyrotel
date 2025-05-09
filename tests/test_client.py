@@ -141,6 +141,37 @@ def test_client_datadog(mock_server):
     req = MockServer.tracker.get_requests()[0]
     assert req.headers.get("DD-API-KEY") == "987654"
 
+def test_client_clickhouse(mock_server):
+    addr = mock_server.address()
+
+    client = Client(
+        enabled = True,
+        exporter = Config.clickhouse_exporter(
+            endpoint = f"http://{addr[0]}:{addr[1]}",
+            user = "foobar",
+            password = "my-password"
+        )
+    )
+    client.start()
+
+    os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = "http://localhost:4318"
+    os.environ["OTEL_EXPORTER_OTLP_PROTOCOL"] = "http"
+
+    provider = new_http_provider()
+    tracer = new_tracer(provider, "pyrotel.test")
+
+    with tracer.start_as_current_span("test_client_active"):
+        pass
+    provider.shutdown()
+
+    wait_until(2, 0.1, lambda: MockServer.tracker.get_count() > 0)
+
+    assert MockServer.tracker.get_count() == 1
+
+    req = MockServer.tracker.get_requests()[0]
+    assert req.headers.get("x-clickhouse-user") == "foobar"
+    assert req.headers.get("x-clickhouse-key") == "my-password"
+
 def test_client_env_config(mock_server):
     addr = mock_server.address()
 

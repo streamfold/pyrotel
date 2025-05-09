@@ -51,6 +51,10 @@ class MockServer(BaseHTTPRequestHandler):
             req = Request(self.path, self.headers)
             self.tracker.add(req)
             self.send_response(200)
+        elif self.path.startswith('/?database='): # clickhouse
+            req = Request(self.path, self.headers)
+            self.tracker.add(req)
+            self.send_response(200)
         else:
             self.send_response(404)
         self.end_headers()

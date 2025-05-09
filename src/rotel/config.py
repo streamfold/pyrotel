@@ -23,8 +23,6 @@ class OTLPExporterEndpoint(TypedDict, total=False):
     retry_initial_backoff: str | None
     retry_max_backoff: str | None
     retry_max_elapsed_time: str | None
-    batch_max_size: int | None
-    batch_timeout: str | None
     tls_cert_file: str | None
     tls_key_file: str | None
     tls_ca_file: str | None
@@ -41,8 +39,6 @@ class OTLPExporter(TypedDict, total=False):
     retry_initial_backoff: str | None
     retry_max_backoff: str | None
     retry_max_elapsed_time: str | None
-    batch_max_size: int | None
-    batch_timeout: str | None
     tls_cert_file: str | None
     tls_key_file: str | None
     tls_ca_file: str | None
@@ -58,18 +54,30 @@ class DatadogExporter(TypedDict, total=False):
     custom_endpoint: str | None
     api_key: str | None
 
+class ClickhouseExporter(TypedDict, total=False):
+    _type: str | None # set with builder method
+    endpoint: str | None
+    database: str | None
+    table_prefix: str | None
+    compression: str | None
+    async_insert: bool | None
+    user: str | None
+    password: str | None
+
 class Options(TypedDict, total=False):
     enabled: bool | None
     pid_file: str | None
     log_file: str | None
     log_format: str | None
     debug_log: list[str] | None
+    batch_max_size: int | None
+    batch_timeout: str | None
     otlp_grpc_endpoint: str | None
     otlp_http_endpoint: str | None
     otlp_receiver_traces_disabled: bool | None
     otlp_receiver_metrics_disabled: bool | None
     otlp_receiver_logs_disabled: bool | None
-    exporter: OTLPExporter | DatadogExporter | None
+    exporter: OTLPExporter | DatadogExporter | ClickhouseExporter | None
 
 class Config:
     DEFAULT_OPTIONS = Options(
@@ -94,6 +102,12 @@ class Config:
         return self.options["enabled"] and self.valid
 
     @staticmethod
+    def clickhouse_exporter(**options: Unpack[ClickhouseExporter]) -> ClickhouseExporter:
+        """Construct a Clickhouse exporter config"""
+        options["_type"] = "clickhouse"
+        return options
+
+    @staticmethod
     def datadog_exporter(**options: Unpack[DatadogExporter]) -> DatadogExporter:
         """Construct a Datadog exporter config"""
         options["_type"] = "datadog"
@@ -113,6 +127,8 @@ class Config:
             log_file = rotel_env("LOG_FILE"),
             log_format = rotel_env("LOG_FORMAT"),
             debug_log = as_list(rotel_env("DEBUG_LOG")),
+            batch_max_size = as_int(rotel_env("BATCH_MAX_SIZE")),
+            batch_timeout = rotel_env("BATCH_TIMEOUT"),
             otlp_grpc_endpoint = rotel_env("OTLP_GRPC_ENDPOINT"),
             otlp_http_endpoint = rotel_env("OTLP_HTTP_ENDPOINT"),
             otlp_receiver_traces_disabled = as_bool(rotel_env("OTLP_RECEIVER_TRACES_DISABLED")),
@@ -146,6 +162,19 @@ class Config:
                 api_key = rotel_env(pfx + "API_KEY"),
             )
             env["exporter"] = exporter
+        if exporter_type == "clickhouse":
+            pfx = "CLICKHOUSE_EXPORTER_"
+            exporter = ClickhouseExporter(
+                _type = "clickhouse",
+                endpoint = rotel_env(pfx + "ENDPOINT"),
+                database = rotel_env(pfx + "DATABASE"),
+                table_prefix = rotel_env(pfx + "TABLE_PREFIX"),
+                compression = rotel_env(pfx + "COMPRESSION"),
+                async_insert = as_bool(rotel_env(pfx + "ASYNC_INSERT")),
+                user = rotel_env(pfx + "USER"),
+                password = rotel_env(pfx + "PASSWORD"),
+            )
+            env["exporter"] = exporter
 
         final_env = Options()
 
@@ -168,8 +197,6 @@ class Config:
             retry_initial_backoff = rotel_env(pfx + "RETRY_INITIAL_BACKOFF"),
             retry_max_backoff = rotel_env(pfx + "RETRY_MAX_BACKOFF"),
             retry_max_elapsed_time = rotel_env(pfx + "RETRY_MAX_ELAPSED_TIME"),
-            batch_max_size = as_int(rotel_env(pfx + "BATCH_MAX_SIZE")),
-            batch_timeout = rotel_env(pfx + "BATCH_TIMEOUT"),
             tls_cert_file = rotel_env(pfx + "TLS_CERT_FILE"),
             tls_key_file = rotel_env(pfx + "TLS_KEY_FILE"),
             tls_ca_file = rotel_env(pfx + "TLS_CA_FILE"),
@@ -190,6 +217,8 @@ class Config:
             "LOG_FILE": opts.get("log_file"),
             "LOG_FORMAT": opts.get("log_format"),
             "DEBUG_LOG": opts.get("debug_log"),
+            "BATCH_MAX_SIZE": opts.get("batch_max_size"),
+            "BATCH_TIMEOUT": opts.get("batch_timeout"),
             "OTLP_GRPC_ENDPOINT": opts.get("otlp_grpc_endpoint"),
             "OTLP_HTTP_ENDPOINT": opts.get("otlp_http_endpoint"),
             "OTLP_RECEIVER_TRACES_DISABLED": opts.get("otlp_receiver_traces_disabled"),
@@ -226,6 +255,11 @@ class Config:
                 if not api_key:
                     _errlog("Datadog exporter api_key must be set")
                     return False
+            elif exporter.get("_type") == "clickhouse":
+                endpoint = exporter.get("endpoint")
+                if not endpoint:
+                    _errlog("Clickhouse exporter endpoint must be set")
+                    return False
             else:
                 protocol = exporter.get("protocol")
                 if protocol is not None and protocol not in {'grpc', 'http'}:
@@ -243,6 +277,9 @@ def _set_exporter_agent_env(updates: dict, exporter: OTLPExporter | DatadogExpor
     exp_type = cast(dict, exporter).get("_type")
     if exp_type == "datadog":
         _set_datadog_exporter_agent_env(updates, exporter)
+        return
+    if exp_type == "clickhouse":
+        _set_clickhouse_exporter_agent_env(updates, exporter)
         return
 
     #
@@ -272,6 +309,20 @@ def _set_datadog_exporter_agent_env(updates: dict, exporter: DatadogExporter) ->
         pfx + "API_KEY": exporter.get("api_key"),
     })
 
+def _set_clickhouse_exporter_agent_env(updates: dict, exporter: ClickhouseExporter) -> None:
+    pfx = "CLICKHOUSE_EXPORTER_"
+
+    updates.update({
+        "EXPORTER": "clickhouse", # We must opt in to Clickhouse
+        pfx + "ENDPOINT": exporter.get("endpoint"),
+        pfx + "DATABASE": exporter.get("database"),
+        pfx + "TABLE_PREFIX": exporter.get("table_prefix"),
+        pfx + "COMPRESSION": exporter.get("compression"),
+        pfx + "ASYNC_INSERT": exporter.get("async_insert"),
+        pfx + "USER": exporter.get("user"),
+        pfx + "PASSWORD": exporter.get("password"),
+    })
+
 def _set_otlp_exporter_agent_env(updates: dict, endpoint_type: str | None, exporter: OTLPExporter | OTLPExporterEndpoint | None) -> None:
     pfx = "OTLP_EXPORTER_"
     if endpoint_type is not None:
@@ -285,8 +336,6 @@ def _set_otlp_exporter_agent_env(updates: dict, endpoint_type: str | None, expor
         pfx + "RETRY_INITIAL_BACKOFF": exporter.get("retry_initial_backoff"),
         pfx + "RETRY_MAX_BACKOFF": exporter.get("retry_max_backoff"),
         pfx + "RETRY_MAX_ELAPSED_TIME": exporter.get("retry_max_elapsed_time"),
-        pfx + "BATCH_MAX_SIZE": exporter.get("batch_max_size"),
-        pfx + "BATCH_TIMEOUT": exporter.get("batch_timeout"),
         pfx + "TLS_CERT_FILE": exporter.get("tls_cert_file"),
         pfx + "TLS_KEY_FILE": exporter.get("tls_key_file"),
         pfx + "TLS_CA_FILE": exporter.get("tls_ca_file"),
