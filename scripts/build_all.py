@@ -17,4 +17,4 @@ for arch in PLATFORM_TAGS:
     for pyver in PLATFORM_PY_VERSIONS:
         result = os.system(f"_ROTEL_PLATFORM_ARCH={arch} _ROTEL_PLATFORM_PY_VERSION={pyver} hatch build -t wheel")
         if result != 0:
-            break
+            exit(1)

@@ -45,6 +45,7 @@ def download_env(agent_arch, py_version, rotel_version):
         "ROTEL_PY_VERSION": py_version,
         "ROTEL_RELEASE": rotel_version,
     }
+
     for key, value in updates.items():
         if value is not None:
             download_env[key] = str(value)

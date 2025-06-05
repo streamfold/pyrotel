@@ -3,7 +3,7 @@
 CWD="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
 
 # Define the required environment variables
-required_vars=("ROTEL_RELEASE", "ROTEL_ARCH", "ROTEL_PY_VERSION")
+required_vars=("ROTEL_RELEASE" "ROTEL_ARCH" "ROTEL_PY_VERSION")
 
 for var in "${required_vars[@]}"; do
     if [[ -z "${!var}" ]]; then
