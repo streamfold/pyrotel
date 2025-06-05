@@ -18,3 +18,10 @@ PLATFORM_FILE_ARCH = {
     "aarch64-linux": "aarch64-unknown-linux-gnu",
     "arm64-darwin": "aarch64-apple-darwin",
 }
+
+PLATFORM_PY_VERSIONS = {
+    "3.10",
+    "3.11",
+    "3.12",
+    "3.13",
+}

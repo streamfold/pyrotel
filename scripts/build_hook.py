@@ -6,11 +6,14 @@ import os
 import shutil
 import stat
 import subprocess
+import sys
 import sysconfig
 from runpy import run_path
 from typing import Any
 
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
+
+from scripts.platform import PLATFORM_PY_VERSIONS
 
 
 def run_relative(filename: str) -> dict[str, Any]:
@@ -18,6 +21,7 @@ def run_relative(filename: str) -> dict[str, Any]:
 
 PLATFORM_TAGS = run_relative("platform.py")["PLATFORM_TAGS"]
 PLATFORM_FILE_ARCH = run_relative("platform.py")["PLATFORM_FILE_ARCH"]
+PLATFORM_PY_VERSIONS = run_relative("platform.py")["PLATFORM_PY_VERSIONS"]
 
 def current_platform_arch():
     platform = sysconfig.get_platform()
@@ -36,10 +40,11 @@ def current_platform_arch():
 
     return f"{arch}-{osname}"
 
-def download_env(agent_arch, rotel_version):
+def download_env(agent_arch, py_version, rotel_version):
     download_env = os.environ.copy()
     updates = {
         "ROTEL_ARCH": agent_arch,
+        "ROTEL_PY_VERSION": py_version,
         "ROTEL_RELEASE": rotel_version,
     }
     for key, value in updates.items():
@@ -48,7 +53,7 @@ def download_env(agent_arch, rotel_version):
 
     return download_env
 
-def download_agent(script_path, agent_arch, out_file):
+def download_agent(script_path, agent_arch, py_version, out_file):
     if not env_not_blank("GITHUB_API_TOKEN"):
         print("must set GITHUB_API_TOKEN to download artifacts")
         exit(1)
@@ -58,7 +63,7 @@ def download_agent(script_path, agent_arch, out_file):
         print("unable to load rotel version from pyproject.yaml")
         exit(1)
 
-    env = download_env(agent_arch, rotel_version)
+    env = download_env(agent_arch, py_version, rotel_version)
 
     p = subprocess.Popen(
         [script_path, out_file],
@@ -94,11 +99,9 @@ class CustomBuildHook(BuildHookInterface):
         """
 
         install_agent_path = os.path.join(self.root, "src", "rotel", "rotel-agent")
-        platform_arch = None
 
-        if "_ROTEL_PLATFORM_ARCH" in os.environ:
-            platform_arch = os.environ["_ROTEL_PLATFORM_ARCH"]
-        else:
+        platform_arch = os.environ.get("_ROTEL_PLATFORM_ARCH")
+        if not platform_arch:
             platform_arch = current_platform_arch()
             print(f"detected build platform {platform_arch}")
 
@@ -106,8 +109,17 @@ class CustomBuildHook(BuildHookInterface):
             print(f"unsupported platform_arch: {platform_arch}")
             exit(1)
 
+        py_version = os.environ.get("_ROTEL_PLATFORM_PY_VERSION")
+        if not py_version:
+            vinfo = sys.version_info
+            py_version = f"{vinfo[0]}.{vinfo[1]}"
+        if py_version not in PLATFORM_PY_VERSIONS:
+            print(f"unsupported python version: {py_version}")
+            exit(1)
+
+        py_version_no_dot = py_version.replace(".", "")
         platform_tag = PLATFORM_TAGS[platform_arch]
-        build_data["tag"] = f"py3-none-{platform_tag}"
+        build_data["tag"] = f"cp{py_version_no_dot}-cp{py_version_no_dot}-{platform_tag}"
         build_data["pure_python"] = False
 
         if env_not_blank("_ROTEL_AGENT_PATH"):
@@ -122,14 +134,14 @@ class CustomBuildHook(BuildHookInterface):
         else:
             download_script_path = os.path.join(self.root, "scripts", "download-agent.sh")
 
-            tmp_dir = os.path.join(self.root, "tmp", "download", platform_arch)
+            tmp_dir = os.path.join(self.root, "tmp", "download", platform_arch, py_version)
             tmp_path = os.path.join(tmp_dir, "rotel.tar.gz")
             os.makedirs(tmp_dir, exist_ok=True)
 
             rm_file(tmp_path)
 
             download_arch = PLATFORM_FILE_ARCH[platform_arch]
-            download_agent(download_script_path, download_arch, tmp_path)
+            download_agent(download_script_path, download_arch, py_version, tmp_path)
 
             shutil.copy(tmp_path, install_agent_path)
             os.chmod(install_agent_path, stat.S_IEXEC | stat.S_IREAD | stat.S_IWRITE)
