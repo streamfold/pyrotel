@@ -13,8 +13,6 @@ from typing import Any
 
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
-from scripts.platform import PLATFORM_PY_VERSIONS
-
 
 def run_relative(filename: str) -> dict[str, Any]:
     return run_path(os.path.join(os.path.dirname(os.path.abspath(__file__)), filename))
@@ -156,7 +154,10 @@ def load_rotel_version() -> str | None:
     return None
 
 def load_pyproject() -> dict[str,Any] | None:
-    import tomllib
+    if sys.version_info >= (3, 11):
+        import tomllib
+    else:
+        import tomli as tomllib
 
     pyproject_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../pyproject.toml")
     try:

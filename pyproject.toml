@@ -67,6 +67,7 @@ dependencies = [
     "opentelemetry-sdk",
     "opentelemetry-exporter-otlp-proto-http",
     "opentelemetry-exporter-otlp-proto-grpc",
+    "tomli ; python_version < '3.11'"
 ]
 
 [tool.hatch.envs.build]
@@ -86,7 +87,7 @@ pythonpath = [
 ]
 
 [[tool.hatch.envs.test.matrix]]
-python = ["38", "39", "310", "311", "312", "313"]
+python = ["310", "311", "312", "313"]
 
 [tool.hatch.envs.lint]
 detached = true
