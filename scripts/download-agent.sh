@@ -9,7 +9,7 @@ fi
 
 ROTEL_OUT_FILE=$CWD/../rotel/rotel-agent
 if [ $# -eq 1 ]; then
-  echo "setting rotel out file to $1"
+  #echo "setting rotel out file to $1"
   ROTEL_OUT_FILE="$1"
 fi
 

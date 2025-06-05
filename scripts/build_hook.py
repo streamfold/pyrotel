@@ -19,8 +19,6 @@ def run_relative(filename: str) -> dict[str, Any]:
 PLATFORM_TAGS = run_relative("platform.py")["PLATFORM_TAGS"]
 PLATFORM_FILE_ARCH = run_relative("platform.py")["PLATFORM_FILE_ARCH"]
 
-ROTEL_RELEASE="v0.0.1-alpha7"
-
 def current_platform_arch():
     platform = sysconfig.get_platform()
     [osname, *_, arch] = platform.split("-")
@@ -38,11 +36,11 @@ def current_platform_arch():
 
     return f"{arch}-{osname}"
 
-def download_env(agent_arch):
+def download_env(agent_arch, rotel_version):
     download_env = os.environ.copy()
     updates = {
         "ROTEL_ARCH": agent_arch,
-        "ROTEL_RELEASE": ROTEL_RELEASE,
+        "ROTEL_RELEASE": rotel_version,
     }
     for key, value in updates.items():
         if value is not None:
@@ -55,7 +53,12 @@ def download_agent(script_path, agent_arch, out_file):
         print("must set GITHUB_API_TOKEN to download artifacts")
         exit(1)
 
-    env = download_env(agent_arch)
+    rotel_version = load_rotel_version()
+    if not rotel_version:
+        print("unable to load rotel version from pyproject.yaml")
+        exit(1)
+
+    env = download_env(agent_arch, rotel_version)
 
     p = subprocess.Popen(
         [script_path, out_file],
@@ -66,9 +69,10 @@ def download_agent(script_path, agent_arch, out_file):
     p.wait(timeout=120)
     retcode = p.returncode
     if retcode != 0:
-        output, _ = p.communicate()
+        output, outerror = p.communicate()
         out = output.decode("utf-8")
-        print(f"Failed to download agent binary (return code: {retcode}): ", out)
+        outerr = outerror.decode("utf-8")
+        print(f"Failed to download agent binary (return code: {retcode}): {out}: {outerr}")
         exit(1)
 
 def rm_file(file_path):
@@ -131,4 +135,25 @@ class CustomBuildHook(BuildHookInterface):
             os.chmod(install_agent_path, stat.S_IEXEC | stat.S_IREAD | stat.S_IWRITE)
 
             rm_file(tmp_path)
+
+def load_rotel_version() -> str | None:
+    cfg = load_pyproject()
+    if cfg:
+        return cfg.get("tool", {}).get("rotel", {}).get("version")
+
+    return None
+
+def load_pyproject() -> dict[str,Any] | None:
+    import tomllib
+
+    pyproject_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../pyproject.toml")
+    try:
+        with open(pyproject_path, "rb") as f:
+            return tomllib.load(f)
+    except FileNotFoundError:
+        print(f"Error: pyproject.toml not found at {pyproject_path}")
+        return None
+    except Exception as e:
+        print(f"Error decoding pyproject.toml: {e}")
+        return None
 

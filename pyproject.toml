@@ -7,7 +7,7 @@ name = "rotel"
 dynamic = ["version"]
 description = "Lightweight OpenTelemetry collector"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 keywords = []
 license = "Apache-2.0"
 authors = [
@@ -17,8 +17,6 @@ authors = [
 classifiers = [
     # Python versions
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -41,6 +39,10 @@ dev = [
 Homepage = "https://github.com/streamfold/pyrotel"
 Issues = "https://github.com/streamfold/pyrotel/issues"
 Source = "https://github.com/streamfold/pyrotel"
+
+[tool.rotel]
+# bump this to upgrade the rotel version
+version = "v0.0.1-alpha15"
 
 [tool.hatch.version]
 path = "src/rotel/__about__.py"

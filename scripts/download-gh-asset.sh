@@ -5,7 +5,7 @@ CWD="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
 
 # Check dependencies.
 set -e
-type curl grep sed tr >&2
+type curl grep sed tr > /dev/null || { echo "Error: Unable to find required tools"; exit 1; }
 xargs=$(which xargs)
 
 # Validate settings.
