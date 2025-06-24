@@ -134,7 +134,7 @@ environment variables.
 ### Clickhouse Exporter
 
 Rotel provides a Clickhouse exporter with support for traces and logs. To use the Clickhouse exporter instead of the OTLP exporter,
-use the method `Cofig.clickhouse_exporter()` with the following options.
+use the method `Config.clickhouse_exporter()` with the following options.
 
 | Option Name  | Type | Environ                                | Default | Options |
 |--------------|------|----------------------------------------|---------|---------|
