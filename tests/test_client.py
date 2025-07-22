@@ -147,18 +147,18 @@ def test_client_multiple_exporters(mock_server):
     client = Client(
         enabled = True,
         exporters = {
-            'datadog': Config.datadog_exporter(
+            'tracing': Config.datadog_exporter(
                 custom_endpoint= f"http://{addr[0]}:{addr[1]}",
                 api_key = "987a654",
             ),
-            'otlp': Config.otlp_exporter(
+            'metrics': Config.otlp_exporter(
                 endpoint = "http://localhost:4318",
                 protocol = "http",
             ),
             'blackhole': Config.blackhole_exporter(),
         },
-        exporters_traces = ['datadog'],
-        exporters_metrics = ['otlp'],
+        exporters_traces = ['tracing'],
+        exporters_metrics = ['metrics'],
         exporters_logs = ['blackhole'],
     )
     client.start()

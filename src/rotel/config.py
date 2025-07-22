@@ -286,7 +286,7 @@ class Config:
         }
 
         exporters = opts.get("exporters")
-        if exporters is not None:
+        if exporters:
             exporters_list = []
             for name, exporter in exporters.items():
                 exporter_type = cast(dict, exporter).get("_type")
@@ -317,7 +317,7 @@ class Config:
 
         else:
             exporter = opts.get("exporter")
-            if exporter is not None:
+            if exporter:
                 _set_exporter_agent_env(updates, None, exporter)
 
         for key, value in updates.items():
@@ -338,9 +338,30 @@ class Config:
     def validate(self) -> bool | None:
         if not self.options.get("enabled"):
             return None
+            
+        exporters = self.options.get("exporters")
+        if exporters:
+            # Require at least one of exporters_traces, exporters_metrics, exporters_logs
+            if all(not self.options.get(x) for x in ["exporters_traces", "exporters_metrics", "exporters_logs"]):
+                _errlog("At least one of exporters_traces, exporters_metrics, exporters_logs must be set")
+                return False
+
+            # Verify all exporters exist
+            for exporters_list_name in ["exporters_traces", "exporters_metrics", "exporters_logs"]:
+                exporters_list = self.options.get(exporters_list_name)
+                if exporters_list:
+                    for exporter_name in exporters_list:
+                        if exporter_name not in exporters:
+                            _errlog(f"Exporter '{exporter_name}' in {exporters_list_name} not found in exporters config")
+                            return False
+            
+            exporter = self.options.get("exporter")
+            if self.options.get("exporter"):
+                _errlog("can not use exporters and exporter config together")
+                return False
 
         exporter = self.options.get("exporter")
-        if exporter is not None:
+        if exporter:
             if exporter.get("_type") == "datadog":
                 api_key = exporter.get("api_key")
                 if not api_key:

@@ -193,6 +193,57 @@ def test_config_multiple_exporters_from_env():
     assert agent["ROTEL_EXPORTERS_METRICS"] == "blackhole"
     assert agent["ROTEL_EXPORTERS_LOGS"] == "logging"
 
+def test_config_invalid_multiple_exporters():
+    cl = Rotel(
+        enabled = True,
+        exporters = {
+            'logging': Config.clickhouse_exporter(
+                endpoint = "http://foo2.example.com:4318",
+            ),
+            'tracing': Config.datadog_exporter(
+                api_key = "12340987",
+            ),
+            'blackhole': Config.blackhole_exporter(),
+        },
+    )
+    
+    # no exporter lists
+    assert not cl.config.is_active()
+
+    cl = Rotel(
+        enabled = True,
+        exporters = {
+            'logging': Config.clickhouse_exporter(
+                endpoint = "http://foo2.example.com:4318",
+            ),
+            'tracing': Config.datadog_exporter(
+                api_key = "12340987",
+            ),
+            'blackhole': Config.blackhole_exporter(),
+        },
+        exporters_traces = ['tracing'],
+    )
+
+    # should be fixed
+    assert cl.config.is_active()
+
+    cl = Rotel(
+        enabled = True,
+        exporters = {
+            'logging': Config.clickhouse_exporter(
+                endpoint = "http://foo2.example.com:4318",
+            ),
+            'tracing': Config.datadog_exporter(
+                api_key = "12340987",
+            ),
+            'blackhole': Config.blackhole_exporter(),
+        },
+        exporters_traces = ['not_exist'],
+    )
+
+    # exporter does not exist
+    assert not cl.config.is_active()
+
 def test_config_invalid_int_no_error():
     os.environ["ROTEL_BATCH_MAX_SIZE"] = "abc" # should not error
 
