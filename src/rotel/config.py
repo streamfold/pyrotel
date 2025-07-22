@@ -64,6 +64,9 @@ class ClickhouseExporter(TypedDict, total=False):
     user: str | None
     password: str | None
 
+class BlackholeExporter(TypedDict, total=False):
+    _type: str | None # set with builder method
+
 class Options(TypedDict, total=False):
     enabled: bool | None
     pid_file: str | None
@@ -77,7 +80,12 @@ class Options(TypedDict, total=False):
     otlp_receiver_traces_disabled: bool | None
     otlp_receiver_metrics_disabled: bool | None
     otlp_receiver_logs_disabled: bool | None
-    exporter: OTLPExporter | DatadogExporter | ClickhouseExporter | None
+    exporter: OTLPExporter | DatadogExporter | ClickhouseExporter | BlackholeExporter | None
+    # Multiple exporter support
+    exporters: dict[str, OTLPExporter | DatadogExporter | ClickhouseExporter | BlackholeExporter] | None
+    exporters_metrics: list[str] | None
+    exporters_traces: list[str] | None
+    exporters_logs: list[str] | None
 
 class Config:
     DEFAULT_OPTIONS = Options(
@@ -135,59 +143,99 @@ class Config:
             otlp_receiver_metrics_disabled = as_bool(rotel_env("OTLP_RECEIVER_METRICS_DISABLED")),
             otlp_receiver_logs_disabled = as_bool(rotel_env("OTLP_RECEIVER_LOGS_DISABLED")),
         )
+        exporters = as_lower(rotel_env("EXPORTERS"))
+        if exporters is not None:
+            env["exporters"] = {}
+            for exporter_str in exporters.split(","):
+                name, value = [exporter_str, exporter_str]
+                if ":" in exporter_str:
+                    name, value = exporter_str.split(":", 1)
 
-        exporter_type = as_lower(rotel_env("EXPORTER"))
-        if exporter_type is None or exporter_type == "otlp":
-            exporter = Config._load_otlp_exporter_options_from_env(None, OTLPExporter)
-            if exporter is None:
-                # make sure we always construct the top-level exporter config
-                exporter = OTLPExporter()
-            env["exporter"] = exporter
+                exporter = None
+                pfx = f"EXPORTER_{name.upper()}_"
+                match value:
+                    case "otlp":
+                        exporter = Config._load_otlp_exporter_options_from_env(pfx, OTLPExporter)
+                        if exporter is None:
+                            exporter = OTLPExporter(_type="otlp")
 
-            endpoint = Config._load_otlp_exporter_options_from_env("TRACES", OTLPExporterEndpoint)
-            if endpoint is not None:
-                exporter["traces"] = endpoint
-            endpoint = Config._load_otlp_exporter_options_from_env("METRICS", OTLPExporterEndpoint)
-            if endpoint is not None:
-                exporter["metrics"] = endpoint
-            endpoint = Config._load_otlp_exporter_options_from_env("LOGS", OTLPExporterEndpoint)
-            if endpoint is not None:
-                exporter["logs"] = endpoint
-        if exporter_type == "datadog":
-            pfx = "DATADOG_EXPORTER_"
-            exporter = DatadogExporter(
-                _type = "datadog",
-                region = rotel_env(pfx + "REGION"),
-                custom_endpoint = rotel_env(pfx + "CUSTOM_ENDPOINT"),
-                api_key = rotel_env(pfx + "API_KEY"),
-            )
-            env["exporter"] = exporter
-        if exporter_type == "clickhouse":
-            pfx = "CLICKHOUSE_EXPORTER_"
-            exporter = ClickhouseExporter(
-                _type = "clickhouse",
-                endpoint = rotel_env(pfx + "ENDPOINT"),
-                database = rotel_env(pfx + "DATABASE"),
-                table_prefix = rotel_env(pfx + "TABLE_PREFIX"),
-                compression = rotel_env(pfx + "COMPRESSION"),
-                async_insert = as_bool(rotel_env(pfx + "ASYNC_INSERT")),
-                user = rotel_env(pfx + "USER"),
-                password = rotel_env(pfx + "PASSWORD"),
-            )
-            env["exporter"] = exporter
+                    case "datadog":
+                        exporter = DatadogExporter(
+                            _type = "datadog",
+                            region = rotel_env(pfx + "REGION"),
+                            custom_endpoint = rotel_env(pfx + "CUSTOM_ENDPOINT"),
+                            api_key = rotel_env(pfx + "API_KEY"),
+                        )
+
+                    case "clickhouse":
+                        exporter = ClickhouseExporter(
+                            _type = "clickhouse",
+                            endpoint = rotel_env(pfx + "ENDPOINT"),
+                            database = rotel_env(pfx + "DATABASE"),
+                            table_prefix = rotel_env(pfx + "TABLE_PREFIX"),
+                            compression = rotel_env(pfx + "COMPRESSION"),
+                            async_insert = as_bool(rotel_env(pfx + "ASYNC_INSERT")),
+                            user = rotel_env(pfx + "USER"),
+                            password = rotel_env(pfx + "PASSWORD"),
+                        )
+                    case "blackhole":
+                        exporter = BlackholeExporter(
+                            _type = "blackhole",
+                        )
+
+                if exporter is not None:
+                    env["exporters"][name] = exporter
+
+        else:
+            value = as_lower(rotel_env("EXPORTER"))
+            if value is None or value == "otlp":
+                exporter = Config._load_otlp_exporter_options_from_env("OTLP_EXPORTER_", OTLPExporter)
+                if exporter is None:
+                    # make sure we always construct the top-level exporter config
+                    exporter = OTLPExporter()
+                env["exporter"] = exporter
+
+                endpoint = Config._load_otlp_exporter_options_from_env("OTLP_EXPORTER_TRACES_", OTLPExporterEndpoint)
+                if endpoint is not None:
+                    exporter["traces"] = endpoint
+                endpoint = Config._load_otlp_exporter_options_from_env("OTLP_EXPORTER_METRICS_", OTLPExporterEndpoint)
+                if endpoint is not None:
+                    exporter["metrics"] = endpoint
+                endpoint = Config._load_otlp_exporter_options_from_env("OTLP_EXPORTER_LOGS_", OTLPExporterEndpoint)
+                if endpoint is not None:
+                    exporter["logs"] = endpoint
+            if value == "datadog":
+                pfx = "DATADOG_EXPORTER_"
+                exporter = DatadogExporter(
+                    _type = "datadog",
+                    region = rotel_env(pfx + "REGION"),
+                    custom_endpoint = rotel_env(pfx + "CUSTOM_ENDPOINT"),
+                    api_key = rotel_env(pfx + "API_KEY"),
+                )
+                env["exporter"] = exporter
+            if value == "clickhouse":
+                pfx = "CLICKHOUSE_EXPORTER_"
+                exporter = ClickhouseExporter(
+                    _type = "clickhouse",
+                    endpoint = rotel_env(pfx + "ENDPOINT"),
+                    database = rotel_env(pfx + "DATABASE"),
+                    table_prefix = rotel_env(pfx + "TABLE_PREFIX"),
+                    compression = rotel_env(pfx + "COMPRESSION"),
+                    async_insert = as_bool(rotel_env(pfx + "ASYNC_INSERT")),
+                    user = rotel_env(pfx + "USER"),
+                    password = rotel_env(pfx + "PASSWORD"),
+                )
+                env["exporter"] = exporter
 
         final_env = Options()
 
-        for key, value in env.items():
+        for name, value in env.items():
             if value is not None:
-                cast(dict, final_env)[key] = value
+                cast(dict, final_env)[name] = value
         return final_env
 
     @staticmethod
-    def _load_otlp_exporter_options_from_env(endpoint_type: str | None, endpoint_class) -> OTLPExporter | OTLPExporterEndpoint | None:
-        pfx = "OTLP_EXPORTER_"
-        if endpoint_type is not None:
-            pfx += f"{endpoint_type}_"
+    def _load_otlp_exporter_options_from_env(pfx: str, endpoint_class) -> OTLPExporter | OTLPExporterEndpoint | None:
         endpoint = endpoint_class(
             endpoint = rotel_env(pfx + "ENDPOINT"),
             protocol = as_lower(rotel_env(pfx + "PROTOCOL")),
@@ -225,9 +273,37 @@ class Config:
             "OTLP_RECEIVER_METRICS_DISABLED": opts.get("otlp_receiver_metrics_disabled"),
             "OTLP_RECEIVER_LOGS_DISABLED": opts.get("otlp_receiver_logs_disabled"),
         }
-        exporter = opts.get("exporter")
-        if exporter is not None:
-            _set_exporter_agent_env(updates, exporter)
+
+        exporters = opts.get("exporters")
+        if exporters is not None:
+            exporters_str = ""
+            for name, exporter in exporters:
+                exporters_str += f"{name}:{cast(dict, exporter).get("_type")}"
+
+                pfx = f"EXPORTER_{name.upper()}_"
+                _set_exporter_agent_env(updates, pfx, exporter)
+
+            updates.update({
+                "EXPORTERS": exporters_str,
+            })
+
+            if opts.get("exporters_metrics") is not None:
+                updates.update({
+                    "EXPORTERS_METRICS": ",".join(opts.get("exporters_metrics")),
+                })
+            if opts.get("exporters_traces") is not None:
+                updates.update({
+                    "EXPORTERS_TRACES": ",".join(opts.get("exporters_traces")),
+                })
+            if opts.get("exporters_logs") is not None:
+                updates.update({
+                    "EXPORTERS_LOGS": ",".join(opts.get("exporters_logs")),
+                })
+
+        else:
+            exporter = opts.get("exporter")
+            if exporter is not None:
+                _set_exporter_agent_env(updates, None, exporter)
 
         for key, value in updates.items():
             if value is not None:
@@ -273,47 +349,61 @@ class Config:
 
         return True
 
-def _set_exporter_agent_env(updates: dict, exporter: OTLPExporter | DatadogExporter) -> None:
+def _set_exporter_agent_env(updates: dict, pfx: str | None, exporter: OTLPExporter | DatadogExporter | ClickhouseExporter | BlackholeExporter) -> None:
     exp_type = cast(dict, exporter).get("_type")
     if exp_type == "datadog":
-        _set_datadog_exporter_agent_env(updates, exporter)
+        _set_datadog_exporter_agent_env(updates, pfx, exporter)
         return
     if exp_type == "clickhouse":
-        _set_clickhouse_exporter_agent_env(updates, exporter)
+        _set_clickhouse_exporter_agent_env(updates, pfx, exporter)
+        return
+    if exp_type == "blackhole":
+        if pfx is None:
+            updates.update({
+                "EXPORTER": "blackhole"
+            })
         return
 
     #
-    # If not Datadog, assume OTLP exporter
+    # Fall through to OTLP exporter
     #
-    _set_otlp_exporter_agent_env(updates, None, exporter)
+    _set_otlp_exporter_agent_env(updates, pfx, None, exporter)
 
     traces = exporter.get("traces")
     if traces is not None:
-        _set_otlp_exporter_agent_env(updates, "TRACES", traces)
+        _set_otlp_exporter_agent_env(updates, None, "TRACES", traces)
 
     metrics = exporter.get("metrics")
     if metrics is not None:
-        _set_otlp_exporter_agent_env(updates, "METRICS", metrics)
+        _set_otlp_exporter_agent_env(updates, None, "METRICS", metrics)
 
     logs = exporter.get("logs")
     if logs is not None:
-        _set_otlp_exporter_agent_env(updates, "LOGS", metrics)
+        _set_otlp_exporter_agent_env(updates, None, "LOGS", metrics)
 
-def _set_datadog_exporter_agent_env(updates: dict, exporter: DatadogExporter) -> None:
-    pfx = "DATADOG_EXPORTER_"
+def _set_datadog_exporter_agent_env(updates: dict, pfx: str | None, exporter: DatadogExporter) -> None:
+    if pfx is None:
+        pfx = "DATADOG_EXPORTER_"
+        # Single exporter config, must set type
+        updates.update({
+            "EXPORTER": "datadog", # We must opt in to Datadog
+        })
 
     updates.update({
-        "EXPORTER": "datadog", # We must opt in to Datadog
         pfx + "REGION": exporter.get("region"),
         pfx + "CUSTOM_ENDPOINT": exporter.get("custom_endpoint"),
         pfx + "API_KEY": exporter.get("api_key"),
     })
 
-def _set_clickhouse_exporter_agent_env(updates: dict, exporter: ClickhouseExporter) -> None:
-    pfx = "CLICKHOUSE_EXPORTER_"
+def _set_clickhouse_exporter_agent_env(updates: dict, pfx: str | None, exporter: ClickhouseExporter) -> None:
+    if pfx is None:
+        pfx = "CLICKHOUSE_EXPORTER_"
+        # Single exporter config, must set type
+        updates.update({
+            "EXPORTER": "clickhouse", # We must opt in to Clickhouse
+        })
 
     updates.update({
-        "EXPORTER": "clickhouse", # We must opt in to Clickhouse
         pfx + "ENDPOINT": exporter.get("endpoint"),
         pfx + "DATABASE": exporter.get("database"),
         pfx + "TABLE_PREFIX": exporter.get("table_prefix"),
@@ -323,8 +413,9 @@ def _set_clickhouse_exporter_agent_env(updates: dict, exporter: ClickhouseExport
         pfx + "PASSWORD": exporter.get("password"),
     })
 
-def _set_otlp_exporter_agent_env(updates: dict, endpoint_type: str | None, exporter: OTLPExporter | OTLPExporterEndpoint | None) -> None:
-    pfx = "OTLP_EXPORTER_"
+def _set_otlp_exporter_agent_env(updates: dict, pfx: str | None, endpoint_type: str | None, exporter: OTLPExporter | OTLPExporterEndpoint | None) -> None:
+    if pfx is None:
+        pfx = "OTLP_EXPORTER_"
     if endpoint_type is not None:
         pfx += f"{endpoint_type}_"
     updates.update({
