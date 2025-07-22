@@ -39,13 +39,19 @@ from rotel import Config, Rotel
 
 rotel = Rotel(
     enabled = True,
-    exporter = Config.otlp_exporter(
-        endpoint = "https://foo.example.com",
-        headers = {
-            "x-api-key" : settings.API_KEY,
-            "x-data-set": "testing"
-        }
-    ),
+    exporters = {
+        'otlp': Config.otlp_exporter(
+            endpoint = "https://foo.example.com",
+            headers = {
+                "x-api-key" : settings.API_KEY,
+                "x-data-set": "testing"
+            }
+        ),
+    },
+    # Define exporters per telemetry type
+    exporters_traces = ['otlp'],
+    exporters_metrics = ['otlp'],
+    exporters_logs = ['otlp']
 )
 rotel.start()
 ```
@@ -60,8 +66,12 @@ rotel.start()
 
 In your application deployment configuration, set the following environment variables. These match the typed configuration above:
 * `ROTEL_ENABLED=true`
-* `ROTEL_OTLP_EXPORTER_ENDPOINT=https://foo.example.com`
-* `ROTEL_OTLP_EXPORTER_CUSTOM_HEADERS=x-api-key={API_KEY}`
+* `ROTEL_EXPORTERS=otlp`
+* `ROTEL_EXPORTER_OTLP_ENDPOINT=https://foo.example.com`
+* `ROTEL_EXPORTER_OTLP_CUSTOM_HEADERS=x-api-key={API_KEY},x-data-set=testing`
+* `ROTEL_EXPORTERS_TRACES=otlp`
+* `ROTEL_EXPORTERS_METRICS=otlp`
+* `ROTEL_EXPORTERS_LOGS=otlp`
 
 Any typed configuration options will override environment variables of the same name.
 
@@ -149,38 +159,37 @@ use the method `Config.clickhouse_exporter()` with the following options.
 When configuring Rotel with only environment variables, you must set `ROTEL_EXPORTER=clickhouse` in addition to the above
 environment variables.
 
-### Endpoint overrides
+### Multiple exporters
 
-When using the OTLP exporter over HTTP, the exporter will append `/v1/traces`, `/v1/metrics`, or `/v1/logs` to the endpoint URL for traces, metrics, and logs respectively. If the service you are exporting telemetry data to does not support these standard URL paths, you can individually override them for traces, metrics, and logs.
+Pyrotel supports [multiple exporters](https://rotel.dev/docs/configuration/multiple-exporters), allowing you to send data to
+different destinations per telemetry type. Just set the `exporters` entry to a dict map of exporter definitions and then
+configure the exporters per telemetry type. For example, this will send metrics and logs to an OTLP endpoint while
+sending traces to Datadog:
 
-For example, to override the endpoint for traces and metrics you can do the following:
 ```python
-from rotel import Config, OTLPExporterEndpoint, Rotel
+from rotel import Config, Rotel
 
 rotel = Rotel(
     enabled = True,
-    exporter = Config.otlp_exporter(
-        headers = {
-            "x-api-key": settings.API_KEY,
-        },
-        traces = OTLPExporterEndpoint(
-            endpoint = "http://foo.example.com:4318/api/otlp/traces",
+    exporters = {
+        'logs_and_metrics': Config.otlp_exporter(
+            endpoint = "https://foo.example.com",
+            headers = {
+                "x-api-key" : settings.API_KEY,
+                "x-data-set": "testing"
+            }
         ),
-        metrics = OTLPExporterEndpoint(
-            endpoint = "http://foo.example.com:4318/api/otlp/metrics",
+        'tracing': Config.datadog_exporter(
+            api_key = "1234abcd",
         ),
-
-    ),
+    },
+    # Define exporters per telemetry type
+    exporters_traces = ['tracing'],
+    exporters_metrics = ['logs_and_metrics'],
+    exporters_logs = ['logs_and_metrics']
 )
 rotel.start()
 ```
-
-Or, you can override the endpoints using environment variables:
-* `ROTEL_OTLP_EXPORTER_TRACES_ENDPOINT=http://foo.example.com:4318/api/otlp/traces`
-* `ROTEL_OTLP_EXPORTER_METRICS_ENDPOINT=http://foo.example.com:4318/api/otlp/metrics`
-* `ROTEL_OTLP_EXPORTER_LOGS_ENDPOINT=http://foo.example.com:4318/api/otlp/logs`
-
-All the OTLP exporter settings can be overridden per endpoint type (traces, metrics, logs). Any value that is not overridden will fall back to the top-level exporter configuration or the default.
 
 ### Retries and timeouts
 
@@ -234,7 +243,10 @@ if os.environ.get("ROTEL_ENABLED") == "true":
 
     rotel = Rotel(
         enabled=True,
-        exporter=otlp_exporter,
+        exporters = {
+            'axiom': otlp_exporter,
+        },
+        exporters_traces = ['axiom']
     )
 
     # Start the agent
@@ -269,22 +281,6 @@ if os.environ.get("ROTEL_ENABLED") == "true":
 ```
 
 For the complete example, see the [hello world](https://github.com/streamfold/pyrotel-hello-world) application.
-
-### Datadog exporter example
-
-To use the Datadog trace exporter instead, configure and start rotel as such:
-```python
-from rotel import Config, Rotel
-
-rotel = Rotel(
-    enabled = True,
-    exporter = Config.datadog_exporter(
-        region = "us1",
-        api_key = "1bde13d9cb1675c5ca8188c8c86066c9",
-    ),
-)
-rotel.start()
-```
 
 ## Debugging
 
