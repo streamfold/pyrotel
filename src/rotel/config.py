@@ -185,6 +185,10 @@ class Config:
 
                 if exporter is not None:
                     env["exporters"][name] = exporter
+            
+            env["exporters_traces"] = as_list(rotel_env("EXPORTERS_TRACES"))
+            env["exporters_metrics"] = as_list(rotel_env("EXPORTERS_METRICS"))
+            env["exporters_logs"] = as_list(rotel_env("EXPORTERS_LOGS"))
 
         else:
             value = as_lower(rotel_env("EXPORTER"))
@@ -276,15 +280,19 @@ class Config:
 
         exporters = opts.get("exporters")
         if exporters is not None:
-            exporters_str = ""
-            for name, exporter in exporters:
-                exporters_str += f"{name}:{cast(dict, exporter).get("_type")}"
+            exporters_list = []
+            for name, exporter in exporters.items():
+                exporter_type = cast(dict, exporter).get("_type")
+                if name == exporter_type:
+                    exporters_list.append(f"{name}")
+                else:
+                    exporters_list.append(f"{name}:{exporter_type}")
 
                 pfx = f"EXPORTER_{name.upper()}_"
                 _set_exporter_agent_env(updates, pfx, exporter)
 
             updates.update({
-                "EXPORTERS": exporters_str,
+                "EXPORTERS": ",".join(exporters_list),
             })
 
             if opts.get("exporters_metrics") is not None:
