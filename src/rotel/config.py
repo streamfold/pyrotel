@@ -126,6 +126,13 @@ class Config:
         """Construct an OTLP exporter config"""
         options["_type"] = "otlp"
         return options
+    
+    @staticmethod
+    def blackhole_exporter() -> BlackholeExporter:
+        """Construct a Blackhole exporter config"""
+        options = BlackholeExporter()
+        options["_type"] = "blackhole"
+        return options
 
     @staticmethod
     def _load_options_from_env() -> Options:
