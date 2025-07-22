@@ -141,6 +141,45 @@ def test_client_datadog(mock_server):
     req = MockServer.tracker.get_requests()[0]
     assert req.headers.get("DD-API-KEY") == "987654"
 
+def test_client_multiple_exporters(mock_server):
+    addr = mock_server.address()
+
+    client = Client(
+        enabled = True,
+        exporters = {
+            'tracing': Config.datadog_exporter(
+                custom_endpoint= f"http://{addr[0]}:{addr[1]}",
+                api_key = "987a654",
+            ),
+            'metrics': Config.otlp_exporter(
+                endpoint = "http://localhost:4318",
+                protocol = "http",
+            ),
+            'blackhole': Config.blackhole_exporter(),
+        },
+        exporters_traces = ['tracing'],
+        exporters_metrics = ['metrics'],
+        exporters_logs = ['blackhole'],
+    )
+    client.start()
+
+    os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = "http://localhost:4318"
+    os.environ["OTEL_EXPORTER_OTLP_PROTOCOL"] = "http"
+
+    provider = new_http_provider()
+    tracer = new_tracer(provider, "pyrotel.test")
+
+    with tracer.start_as_current_span("test_client_active"):
+        pass
+    provider.shutdown()
+
+    wait_until(2, 0.1, lambda: MockServer.tracker.get_count() > 0)
+
+    assert MockServer.tracker.get_count() == 1
+
+    req = MockServer.tracker.get_requests()[0]
+    assert req.headers.get("DD-API-KEY") == "987a654"
+
 def test_client_clickhouse(mock_server):
     addr = mock_server.address()
 
