@@ -24,16 +24,10 @@ classifiers = [
     # Application status
     "Development Status :: 3 - Alpha",
 ]
-dependencies = [
-    "typing-extensions"
-]
+dependencies = ["typing-extensions"]
 
 [project.optional-dependencies]
-dev = [
-    "pkginfo>=1.12.0",
-    "pytest>=7.0",
-    "twine>=6.1.0",
-]
+dev = ["pkginfo>=1.12.0", "pytest>=7.0", "twine>=6.1.0"]
 
 [project.urls]
 Homepage = "https://github.com/streamfold/pyrotel"
@@ -42,7 +36,7 @@ Source = "https://github.com/streamfold/pyrotel"
 
 [tool.rotel]
 # bump this to upgrade the rotel version
-version = "v0.0.1-alpha20"
+version = "v0.0.1-alpha22"
 
 [tool.hatch.version]
 path = "src/rotel/__about__.py"
@@ -52,9 +46,7 @@ sources = ["src"]
 exclude = ["scripts", "tests", "conftest.py"]
 
 [tool.hatch.build.targets.wheel]
-artifacts = [
-    "src/rotel/rotel-agent",
-]
+artifacts = ["src/rotel/rotel-agent"]
 
 [tool.hatch.envs.default]
 installer = "uv"
@@ -67,7 +59,7 @@ dependencies = [
     "opentelemetry-sdk",
     "opentelemetry-exporter-otlp-proto-http",
     "opentelemetry-exporter-otlp-proto-grpc",
-    "tomli ; python_version < '3.11'"
+    "tomli ; python_version < '3.11'",
 ]
 
 [tool.hatch.envs.build]
@@ -82,29 +74,18 @@ for = "_ROTEL_AGENT_ARCH=\"{args}\" hatch build -t wheel"
 path = "scripts/build_hook.py"
 
 [tool.pytest.ini_options]
-pythonpath = [
-    "src"
-]
+pythonpath = ["src"]
 
 [[tool.hatch.envs.test.matrix]]
 python = ["310", "311", "312", "313"]
 
 [tool.hatch.envs.lint]
 detached = true
-dependencies = [
-    "isort",
-    "ruff",
-]
+dependencies = ["isort", "ruff"]
 
 [tool.hatch.envs.lint.scripts]
-check = [
-    "isort --check .",
-    "ruff check ."
-]
-fmt = [
-    "isort .",
-    "ruff check --fix ."
-]
+check = ["isort --check .", "ruff check ."]
+fmt = ["isort .", "ruff check --fix ."]
 
 [tool.isort]
 profile = "black"
