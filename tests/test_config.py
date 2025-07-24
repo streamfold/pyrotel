@@ -165,6 +165,25 @@ def test_clickhouse_exporter():
     )
     assert not cl.config.is_active()
 
+def test_kafka_exporter():
+    cl = Rotel(
+        enabled = True,
+        exporters = {
+            'stream': Config.kafka_exporter(
+                brokers = ["127.0.0.1:9092", "127.0.0.2:9092"],
+                traces_topic = "rotel-traces",
+            )
+        },
+        exporters_traces = ["stream"]
+    )
+
+    assert cl.config.is_active()
+
+    agent = cl.config.build_agent_environment()
+    assert agent["ROTEL_EXPORTERS"] == "stream:kafka"
+    assert agent["ROTEL_EXPORTER_STREAM_BROKERS"] == "127.0.0.1:9092,127.0.0.2:9092"
+    assert agent["ROTEL_EXPORTER_STREAM_TRACES_TOPIC"] == "rotel-traces"
+
 def test_config_multiple_exporters_from_env():
     os.environ["ROTEL_EXPORTERS"] = "logging:clickhouse,tracing:datadog,blackhole"
     os.environ["ROTEL_EXPORTER_LOGGING_ENDPOINT"] = "https://endpoint1.com"
