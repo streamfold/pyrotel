@@ -188,8 +188,9 @@ def test_client_clickhouse(mock_server):
         exporter = Config.clickhouse_exporter(
             endpoint = f"http://{addr[0]}:{addr[1]}",
             user = "foobar",
-            password = "my-password"
-        )
+            password = "my-password",
+            enable_json = True,
+        ),
     )
     client.start()
 
