@@ -41,7 +41,7 @@ def test_config_env_basic():
     assert agent.get("ROTEL_OTLP_EXPORTER") is None
     assert agent["ROTEL_OTLP_EXPORTER_ENDPOINT"] == "http://foo.example.com:4317"
     assert agent["ROTEL_OTLP_EXPORTER_CUSTOM_HEADERS"] == "api=1234,team=8793"
-    assert agent["ROTEL_OTLP_EXPORTER_TLS_SKIP_VERIFY"] == "True"
+    assert agent["ROTEL_OTLP_EXPORTER_TLS_SKIP_VERIFY"] == "true"
 
 def test_config_from_options():
     cl = Rotel(

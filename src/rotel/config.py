@@ -63,6 +63,8 @@ class ClickhouseExporter(TypedDict, total=False):
     async_insert: bool | None
     user: str | None
     password: str | None
+    enable_json: bool | None
+    json_underscore: bool | None
 
 class KafkaExporter(TypedDict, total=False):
     _type: str | None # set with builder method
@@ -217,6 +219,8 @@ class Config:
                             async_insert = as_bool(rotel_env(pfx + "ASYNC_INSERT")),
                             user = rotel_env(pfx + "USER"),
                             password = rotel_env(pfx + "PASSWORD"),
+                            enable_json = as_bool(rotel_env(pfx + "ENABLE_JSON")),
+                            json_underscore = as_bool(rotel_env(pfx + "JSON_UNDERSCORE")),
                         )
                         
                     case "kafka":
@@ -298,6 +302,8 @@ class Config:
                     async_insert = as_bool(rotel_env(pfx + "ASYNC_INSERT")),
                     user = rotel_env(pfx + "USER"),
                     password = rotel_env(pfx + "PASSWORD"),
+                    enable_json = as_bool(rotel_env(pfx + "ENABLE_JSON")),
+                    json_underscore = as_bool(rotel_env(pfx + "JSON_UNDERSCORE")),
                 )
                 env["exporter"] = exporter
 
@@ -387,6 +393,8 @@ class Config:
             if value is not None:
                 if isinstance(value, list):
                     value = ",".join(value)
+                if isinstance(value, bool):
+                    value = str(value).lower()
                 if isinstance(value, dict):
                     hdr_list = []
                     for k, v in value.items():
@@ -513,6 +521,8 @@ def _set_clickhouse_exporter_agent_env(updates: dict, pfx: str | None, exporter:
         pfx + "ASYNC_INSERT": exporter.get("async_insert"),
         pfx + "USER": exporter.get("user"),
         pfx + "PASSWORD": exporter.get("password"),
+        pfx + "ENABLE_JSON": exporter.get("enable_json"),
+        pfx + "JSON_UNDERSCORE": exporter.get("json_underscore"),
     })
     
 def _set_kafka_exporter_agent_env(updates: dict, pfx: str | None, exporter: DatadogExporter) -> None:
