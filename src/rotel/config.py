@@ -64,6 +64,33 @@ class ClickhouseExporter(TypedDict, total=False):
     user: str | None
     password: str | None
 
+class KafkaExporter(TypedDict, total=False):
+    _type: str | None # set with builder method
+    brokers: list[str] | None
+    traces_topic: str | None
+    metrics_topic: str | None
+    logs_topic: str | None
+    format: str | None
+    compression: str | None
+    acks: str | None
+    client_id: str | None
+    max_message_bytes: int | None
+    linger_ms: int | None
+    retries: int | None
+    retry_backoff_ms: int | None
+    retry_backoff_max_ms: int | None
+    message_timeout_ms: int | None
+    request_timeout_ms: int | None
+    batch_size: int | None
+    partitioner: str | None
+    partitioner_metrics_by_resource_attributes: str | None
+    partitioner_logs_by_resource_attributes: str | None
+    custom_config: dict[str, str] | None
+    sasl_username: str | None
+    sasl_password: str | None
+    sasl_mechanism: str | None
+    security_protocol: str | None
+
 class BlackholeExporter(TypedDict, total=False):
     _type: str | None # set with builder method
 
@@ -82,7 +109,7 @@ class Options(TypedDict, total=False):
     otlp_receiver_logs_disabled: bool | None
     exporter: OTLPExporter | DatadogExporter | ClickhouseExporter | BlackholeExporter | None
     # Multiple exporter support
-    exporters: dict[str, OTLPExporter | DatadogExporter | ClickhouseExporter | BlackholeExporter] | None
+    exporters: dict[str, OTLPExporter | DatadogExporter | ClickhouseExporter | KafkaExporter | BlackholeExporter] | None
     exporters_metrics: list[str] | None
     exporters_traces: list[str] | None
     exporters_logs: list[str] | None
@@ -125,6 +152,12 @@ class Config:
     def otlp_exporter(**options: Unpack[OTLPExporter]) -> OTLPExporter:
         """Construct an OTLP exporter config"""
         options["_type"] = "otlp"
+        return options
+        
+    @staticmethod
+    def kafka_exporter(**options: Unpack[KafkaExporter]) -> KafkaExporter:
+        """Construct a Kafka exporter config"""
+        options["_type"] = "kafka"
         return options
     
     @staticmethod
@@ -185,6 +218,36 @@ class Config:
                             user = rotel_env(pfx + "USER"),
                             password = rotel_env(pfx + "PASSWORD"),
                         )
+                        
+                    case "kafka":
+                        exporter = KafkaExporter(
+                            _type = "kafka",
+                            brokers = as_list(rotel_env(pfx + "BOOTSTRAP_SERVERS")),
+                            traces_topic = rotel_env(pfx + "TRACES_TOPIC"),
+                            metrics_topic = rotel_env(pfx + "METRICS_TOPIC"),
+                            logs_topic = rotel_env(pfx + "LOGS_TOPIC"),
+                            format = rotel_env(pfx + "FORMAT"),
+                            compression = rotel_env(pfx + "COMPRESSION"),
+                            acks = rotel_env(pfx + "ACKS"),
+                            client_id = rotel_env(pfx + "CLIENT_ID"),
+                            max_message_bytes = as_int(rotel_env(pfx + "MAX_MESSAGE_BYTES")),
+                            linger_ms = as_int(rotel_env(pfx + "LINGER_MS")),
+                            retries = as_int(rotel_env(pfx + "RETRIES")),
+                            retry_backoff_ms=as_int(rotel_env(pfx + "RETRY_BACKOFF_MS")),
+                            retry_backoff_max_ms=as_int(rotel_env(pfx + "RETRY_BACKOFF_MAX_MS")),
+                            message_timeout_ms=as_int(rotel_env(pfx + "MESSAGE_TIMEOUT_MS")),
+                            request_timeout_ms=as_int(rotel_env(pfx + "REQUEST_TIMEOUT_MS")),
+                            batch_size=as_int(rotel_env(pfx + "BATCH_SIZE")),
+                            partitioner = rotel_env(pfx + "PARTITIONER"),
+                            partitioner_metrics_by_resource_attributes=rotel_env(pfx + "PARTITIONER_METRICS_BY_RESOURCE_ATTRIBUTES"),
+                            partitioner_logs_by_resource_attributes=rotel_env(pfx + "PARTITIONER_LOGS_BY_RESOURCE_ATTRIBUTES"),
+                            custom_config=as_dict(rotel_env(pfx + "CUSTOM_CONFIG")),
+                            sasl_username = rotel_env(pfx + "SASL_USERNAME"),
+                            sasl_password = rotel_env(pfx + "SASL_PASSWORD"),
+                            sasl_mechanism = rotel_env(pfx + "SASL_MECHANISM"),
+                            security_protocol = rotel_env(pfx + "SECURITY_PROTOCOL"),
+                        )
+                        
                     case "blackhole":
                         exporter = BlackholeExporter(
                             _type = "blackhole",
@@ -393,6 +456,9 @@ def _set_exporter_agent_env(updates: dict, pfx: str | None, exporter: OTLPExport
     if exp_type == "clickhouse":
         _set_clickhouse_exporter_agent_env(updates, pfx, exporter)
         return
+    if exp_type == "kafka":
+        _set_kafka_exporter_agent_env(updates, pfx, exporter)
+        return
     if exp_type == "blackhole":
         if pfx is None:
             updates.update({
@@ -430,7 +496,7 @@ def _set_datadog_exporter_agent_env(updates: dict, pfx: str | None, exporter: Da
         pfx + "CUSTOM_ENDPOINT": exporter.get("custom_endpoint"),
         pfx + "API_KEY": exporter.get("api_key"),
     })
-
+                
 def _set_clickhouse_exporter_agent_env(updates: dict, pfx: str | None, exporter: ClickhouseExporter) -> None:
     if pfx is None:
         pfx = "CLICKHOUSE_EXPORTER_"
@@ -447,6 +513,41 @@ def _set_clickhouse_exporter_agent_env(updates: dict, pfx: str | None, exporter:
         pfx + "ASYNC_INSERT": exporter.get("async_insert"),
         pfx + "USER": exporter.get("user"),
         pfx + "PASSWORD": exporter.get("password"),
+    })
+    
+def _set_kafka_exporter_agent_env(updates: dict, pfx: str | None, exporter: DatadogExporter) -> None:
+    if pfx is None:
+        pfx = "KAFKA_EXPORTER_"
+        # Single exporter config, must set type
+        updates.update({
+            "EXPORTER": "kafka",
+        })
+
+    updates.update({
+        pfx + "BROKERS": exporter.get("brokers"),
+        pfx + "TRACES_TOPIC": exporter.get("traces_topic"),
+        pfx + "METRICS_TOPIC": exporter.get("metrics_topic"),
+        pfx + "LOGS_TOPIC": exporter.get("logs_topic"),
+        pfx + "FORMAT": exporter.get("format"),
+        pfx + "COMPRESSION": exporter.get("compression"),
+        pfx + "ACKS": exporter.get("acks"),
+        pfx + "CLIENT_ID": exporter.get("client_id"),
+        pfx + "MAX_MESSAGE_BYTES": exporter.get("max_message_bytes"),
+        pfx + "LINGER_MS": exporter.get("linger_ms"),
+        pfx + "RETRIES": exporter.get("retries"),
+        pfx + "RETRY_BACKOFF_MS": exporter.get("retry_backoff_ms"),
+        pfx + "RETRY_BACKOFF_MAX_MS": exporter.get("retry_backoff_max_ms"),
+        pfx + "MESSAGE_TIMEOUT_MS": exporter.get("message_timeout_ms"),
+        pfx + "REQUEST_TIMEOUT_MS": exporter.get("request_timeout_ms"),
+        pfx + "BATCH_SIZE": exporter.get("batch_size"),
+        pfx + "PARTITIONER": exporter.get("partitioner"),
+        pfx + "PARTITIONER_METRICS_BY_RESOURCE_ATTRIBUTES": exporter.get("partitioner_metrics_by_resource_attributes"),
+        pfx + "PARTITIONER_LOGS_BY_RESOURCE_ATTRIBUTES": exporter.get("partitioner_logs_by_resource_attributes"),
+        pfx + "CUSTOM_CONFIG": exporter.get("custom_config"),
+        pfx + "SASL_USERNAME": exporter.get("sasl_username"),
+        pfx + "SASL_PASSWORD": exporter.get("sasl_password"),
+        pfx + "SASL_MECHANISM": exporter.get("sasl_mechanism"),
+        pfx + "SECURITY_PROTOCOL": exporter.get("security_protocol"),
     })
 
 def _set_otlp_exporter_agent_env(updates: dict, pfx: str | None, endpoint_type: str | None, exporter: OTLPExporter | OTLPExporterEndpoint | None) -> None:
