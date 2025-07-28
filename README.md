@@ -1,4 +1,5 @@
 # rotel 🌶️ 🍅
+
 Python package for the Rotel lightweight OpenTelemetry collector.
 
 [![PyPI - Version](https://img.shields.io/pypi/v/rotel.svg)](https://pypi.org/project/rotel)
@@ -9,7 +10,7 @@ Python package for the Rotel lightweight OpenTelemetry collector.
 This package provides an embedded OpenTelemetry collector, built on the lightweight [Rotel collector](https://github.com/streamfold/rotel). When started, it spawns a background daemon that accepts OpenTelemetry metrics, traces, and logs. Designed for minimal overhead, Rotel reduces resource consumption while simplifying telemetry collection and processing in complex Python applications—without requiring additional sidecar containers.
 
 | Telemetry Type | Support |
-|----------------|---------|
+| -------------- | ------- |
 | Metrics        | Alpha   |
 | Traces         | Alpha   |
 | Logs           | Alpha   |
@@ -27,12 +28,13 @@ Future updates will introduce support for filtering data, transforming telemetry
 ### Rotel configuration
 
 Add the `rotel` Python package to your project's dependencies. There are two approaches to configuring rotel:
+
 1. typed config dicts
 2. environment variables
 
 #### Typed dicts
 
-In the startup section of your `main.py` add the following code block. Replace the endpoint with the endpoint of your OpenTelemetry vendor and any required API KEY headers. 
+In the startup section of your `main.py` add the following code block. Replace the endpoint with the endpoint of your OpenTelemetry vendor and any required API KEY headers.
 
 ```python
 from rotel import Config, Rotel
@@ -59,47 +61,49 @@ rotel.start()
 #### Environment variables
 
 You can also configure rotel entirely with environment variables. In your application startup, insert:
+
 ```python
 import rotel
 rotel.start()
 ```
 
 In your application deployment configuration, set the following environment variables. These match the typed configuration above:
-* `ROTEL_ENABLED=true`
-* `ROTEL_EXPORTERS=otlp`
-* `ROTEL_EXPORTER_OTLP_ENDPOINT=https://foo.example.com`
-* `ROTEL_EXPORTER_OTLP_CUSTOM_HEADERS=x-api-key={API_KEY},x-data-set=testing`
-* `ROTEL_EXPORTERS_TRACES=otlp`
-* `ROTEL_EXPORTERS_METRICS=otlp`
-* `ROTEL_EXPORTERS_LOGS=otlp`
+
+- `ROTEL_ENABLED=true`
+- `ROTEL_EXPORTERS=otlp`
+- `ROTEL_EXPORTER_OTLP_ENDPOINT=https://foo.example.com`
+- `ROTEL_EXPORTER_OTLP_CUSTOM_HEADERS=x-api-key={API_KEY},x-data-set=testing`
+- `ROTEL_EXPORTERS_TRACES=otlp`
+- `ROTEL_EXPORTERS_METRICS=otlp`
+- `ROTEL_EXPORTERS_LOGS=otlp`
 
 Any typed configuration options will override environment variables of the same name.
 
 ---
 
-See the [*Configuration*](#configuration) section for the full list of options.
+See the [_Configuration_](#configuration) section for the full list of options.
 
 ### OpenTelemetry SDK configuration
 
-Once the rotel collector agent is running, you may need to configure your application's instrumentation. If you are using the default rotel endpoints of *localhost:4317* and *localhost:4318*, then you should not need to change anything. 
+Once the rotel collector agent is running, you may need to configure your application's instrumentation. If you are using the default rotel endpoints of _localhost:4317_ and _localhost:4318_, then you should not need to change anything.
 
 To set the endpoint the OpenTelemetry SDK will use, set the following environment variable:
 
-* `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317`
+- `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317`
 
 ## Configuration
 
 This is the full list of global options and their environment variable alternatives. Any defaults left blank in the table are either False or None.
 
-| Option Name        | Type      | Environ              | Default              | Options               |
-|--------------------|-----------|----------------------|----------------------|-----------------------|
-| enabled            | bool      | ROTEL_ENABLED        |                      |                       |
-| pid_file           | str       | ROTEL_PID_FILE       | /tmp/rotel-agent.pid |                       |
-| log_file           | str       | ROTEL_LOG_FILE       | /tmp/rotel-agent.log |                       |
-| log_format         | str       | ROTEL_LOG_FORMAT     | text                 | json, text            |
-| debug_log          | list[str] | ROTEL_DEBUG_LOG      |                      | traces, metrics, logs |
-| otlp_grpc_endpoint | str       | ROTEL_OTLP_GRPC_ENDPOINT | localhost:4317   |                       |
-| otlp_http_endpoint | str       | ROTEL_OTLP_HTTP_ENDPOINT | localhost:4318   |                       |
+| Option Name        | Type      | Environ                  | Default              | Options               |
+| ------------------ | --------- | ------------------------ | -------------------- | --------------------- |
+| enabled            | bool      | ROTEL_ENABLED            |                      |                       |
+| pid_file           | str       | ROTEL_PID_FILE           | /tmp/rotel-agent.pid |                       |
+| log_file           | str       | ROTEL_LOG_FILE           | /tmp/rotel-agent.log |                       |
+| log_format         | str       | ROTEL_LOG_FORMAT         | text                 | json, text            |
+| debug_log          | list[str] | ROTEL_DEBUG_LOG          |                      | traces, metrics, logs |
+| otlp_grpc_endpoint | str       | ROTEL_OTLP_GRPC_ENDPOINT | localhost:4317       |                       |
+| otlp_http_endpoint | str       | ROTEL_OTLP_HTTP_ENDPOINT | localhost:4318       |                       |
 
 For each exporter you would like to use, see the configuration options below. Exporters should be
 assigned to the `exporters` dict with a custom name.
@@ -109,7 +113,7 @@ assigned to the `exporters` dict with a custom name.
 To construct an OTLP exporter, use the method `Config.otlp_exporter()` with the following options.
 
 | Option Name            | Type           | Default | Options      |
-|------------------------|----------------|---------|--------------|
+| ---------------------- | -------------- | ------- | ------------ |
 | endpoint               | str            |         |              |
 | protocol               | str            | grpc    | grpc or http |
 | headers                | dict[str, str] |         |              |
@@ -132,7 +136,7 @@ that supports traces at the moment. To use it instead of the OTLP exporter,
 use the method `Config.datadog_exporter()` with the following options.
 
 | Option Name     | Type | Default | Options                |
-|-----------------|------|---------|------------------------|
+| --------------- | ---- | ------- | ---------------------- |
 | region          | str  | us1     | us1, us3, us5, eu, ap1 |
 | custom_endpoint | str  |         |                        |
 | api_key         | str  |         |                        |
@@ -143,7 +147,7 @@ Rotel provides a Clickhouse exporter with support metrics, logs, and traces. To 
 use the method `Config.clickhouse_exporter()` with the following options.
 
 | Option Name  | Type | Default | Options |
-|--------------|------|---------|---------|
+| ------------ | ---- | ------- | ------- |
 | endpoint     | str  |         |         |
 | database     | str  | otel    |         |
 | table_prefix | str  | otel    |         |
@@ -158,7 +162,7 @@ Rotel provides a Kafka exporter with support for metrics, logs, and traces. To u
 use the method `Config.kafka_exporter()` with the following options.
 
 | Option Name                                | Type | Default           | Options                                                                      |
-|--------------------------------------------|------|-------------------|------------------------------------------------------------------------------|
+| ------------------------------------------ | ---- | ----------------- | ---------------------------------------------------------------------------- |
 | brokers                                    | list | localhost:9092    |                                                                              |
 | traces_topic                               | str  | otlp_traces       |                                                                              |
 | logs_topic                                 | str  | otlp_logs         |                                                                              |
@@ -220,13 +224,13 @@ rotel.start()
 
 You can override the default request timeout of 5 seconds for the OTLP Exporter with the exporter setting:
 
-* `request_timeout`: Takes a string time duration, so `"250ms"` for 250 milliseconds, `"3s"` for 3 seconds, etc.
+- `request_timeout`: Takes a string time duration, so `"250ms"` for 250 milliseconds, `"3s"` for 3 seconds, etc.
 
 Requests will be retried if they match retryable error codes like 429 (Too Many Requests) or timeout. You can control the behavior with the following exporter options:
 
-* `retry_initial_backoff`: Initial backoff duration
-* `retry_max_backoff`: Maximum backoff interval
-* `retry_max_elapsed_time`: Maximum wall time a request will be retried for until it is marked as permanent failure
+- `retry_initial_backoff`: Initial backoff duration
+- `retry_max_backoff`: Maximum backoff interval
+- `retry_max_elapsed_time`: Maximum wall time a request will be retried for until it is marked as permanent failure
 
 All options should be represented as string time durations.
 
@@ -236,9 +240,10 @@ To illustrate this further, here's a full example of how to use Rotel to send tr
 from an application instrumented with OpenTelemetry.
 
 The code sample depends on the following environment variables:
-* `ROTEL_ENABLED=true`: Turn on or off based on the deployment environment
-* `AXIOM_DATASET`: Name of an Axiom dataset
-* `AXIOM_API_TOKEN`: Set to an API token that has access to the Axiom dataset
+
+- `ROTEL_ENABLED=true`: Turn on or off based on the deployment environment
+- `AXIOM_DATASET`: Name of an Axiom dataset
+- `AXIOM_API_TOKEN`: Set to an API token that has access to the Axiom dataset
 
 ```python
 import os
@@ -309,7 +314,7 @@ For the complete example, see the [hello world](https://github.com/streamfold/py
 
 ## Debugging
 
-If you set the option `debug_log` to `["traces"]`, or the environment variable `ROTEL_DEBUG_LOG=traces`, then rotel will log a summary to the log file `/tmp/rotel-agent.log` each time it processes trace spans. You can add also specify *metrics* to debug metrics and *logs* to debug logs.   
+If you set the option `debug_log` to `["traces"]`, or the environment variable `ROTEL_DEBUG_LOG=traces`, then rotel will log a summary to the log file `/tmp/rotel-agent.log` each time it processes trace spans. You can add also specify _metrics_ to debug metrics and _logs_ to debug logs.
 
 ## FAQ
 
