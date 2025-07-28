@@ -187,8 +187,8 @@ method `Config.kafka_exporter()` using the following options.
 | custom_config                              | str  | 1000              |                                                                              |
 | sasl_username                              | str  |                   |                                                                              |
 | sasl_password                              | str  |                   |                                                                              |
-| sasl_mechanism                             | str  |                   |                                                                              |
-| security_protocol                          | str  | PLAINTEXT         | PLAINTEXT, SSL, SASL_PLAINTEXT, SASL_SSL                                     |
+| sasl_mechanism                             | str  |                   | plain, scram-sha256, scram-sha512                                            |
+| security_protocol                          | str  | plaintext         | plaintext, ssl, sasl-plaintext, sasl-ssl                                     |
 
 ### Multiple exporters
 
