@@ -132,8 +132,8 @@ To construct an OTLP exporter, use the method `Config.otlp_exporter()` with the 
 ### Datadog Exporter
 
 Rotel provides an experimental [Datadog exporter](https://github.com/streamfold/rotel/blob/main/src/exporters/datadog/README.md)
-that supports traces at the moment. To use it instead of the OTLP exporter,
-use the method `Config.datadog_exporter()` with the following options.
+that supports traces at the moment. Construct a Datadog exporter
+with the method `Config.datadog_exporter()` using the following options.
 
 | Option Name     | Type | Default | Options                |
 | --------------- | ---- | ------- | ---------------------- |
@@ -143,23 +143,25 @@ use the method `Config.datadog_exporter()` with the following options.
 
 ### Clickhouse Exporter
 
-Rotel provides a Clickhouse exporter with support metrics, logs, and traces. To use the Clickhouse exporter instead of the OTLP exporter,
-use the method `Config.clickhouse_exporter()` with the following options.
+Rotel provides a Clickhouse exporter with support metrics, logs, and traces. Construct a Clickhouse exporter with the
+method `Config.clickhouse_exporter()` using the following options.
 
-| Option Name  | Type | Default | Options |
-| ------------ | ---- | ------- | ------- |
-| endpoint     | str  |         |         |
-| database     | str  | otel    |         |
-| table_prefix | str  | otel    |         |
-| compression  | str  | lz4     |         |
-| async_insert | bool | true    |         |
-| user         | str  |         |         |
-| password     | str  |         |         |
+| Option Name     | Type | Default | Options |
+| --------------- | ---- | ------- | ------- |
+| endpoint        | str  |         |         |
+| database        | str  | otel    |         |
+| table_prefix    | str  | otel    |         |
+| compression     | str  | lz4     |         |
+| async_insert    | bool | true    |         |
+| user            | str  |         |         |
+| password        | str  |         |         |
+| enable_json     | bool |         |         |
+| json_underscore | bool |         |         |
 
 ### Kafka Exporter
 
-Rotel provides a Kafka exporter with support for metrics, logs, and traces. To use the Kafka exporter instead of the OTLP exporter,
-use the method `Config.kafka_exporter()` with the following options.
+Rotel provides a Kafka exporter with support for metrics, logs, and traces. Construct a Kafka exporter with the
+method `Config.kafka_exporter()` using the following options.
 
 | Option Name                                | Type | Default           | Options                                                                      |
 | ------------------------------------------ | ---- | ----------------- | ---------------------------------------------------------------------------- |
