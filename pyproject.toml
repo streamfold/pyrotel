@@ -36,7 +36,7 @@ Source = "https://github.com/streamfold/pyrotel"
 
 [tool.rotel]
 # bump this to upgrade the rotel version
-version = "v0.0.1-alpha22"
+version = "v0.0.1-alpha23"
 
 [tool.hatch.version]
 path = "src/rotel/__about__.py"
