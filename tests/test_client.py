@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import tempfile
 
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
     OTLPSpanExporter as OTLPGRPCSpanExporter,
@@ -254,6 +255,51 @@ def test_client_double_start(mock_server):
     res2 = agent.start(cfg)
     assert res2
 
+def test_client_processor_traces(mock_server):
+    addr = mock_server.address()
+    
+    tmpfile = tempfile.mktemp()
+
+    client = Client(
+        enabled = True,
+        log_file=tmpfile,
+        debug_log=['traces'],
+        debug_log_verbosity = "detailed",
+        
+        # We use the OTLP exporter so that we can wait for the request
+        # to be processed
+        exporters = {
+            'otlp': Config.otlp_exporter(
+                endpoint = f"http://{addr[0]}:{addr[1]}",
+                protocol = "http"
+            ),
+        },
+        exporters_traces = ['otlp'],
+        processors_traces=[f"{os.path.dirname(os.path.dirname(__file__))}/tests/contrib/trace_processor.py"]
+    )
+    client.start()
+
+    os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = "http://localhost:4318"
+    os.environ["OTEL_EXPORTER_OTLP_PROTOCOL"] = "http"
+
+    provider = new_http_provider()
+    tracer = new_tracer(provider, "pyrotel.test")
+
+    with tracer.start_as_current_span("test_client_active") as span:
+        span.set_attribute("test_attribute", "this_is_a_value")
+    provider.shutdown()
+
+    wait_until(2, 0.1, lambda: MockServer.tracker.get_count() > 0)
+
+    assert MockServer.tracker.get_count() == 1
+        
+    contents = read_file(tmpfile)
+    
+    assert "test_attribute: Str(this_is_a_value)" in contents
+    assert "processed.by: Str(this_is_trace_processor)" in contents
+    
+    os.remove(tmpfile)
+
 def new_grpc_provider() -> TracerProvider:
     return new_provider(OTLPGRPCSpanExporter(timeout=5, endpoint="http://localhost:4317", insecure=True))
 
@@ -274,3 +320,7 @@ def new_provider(exporter) -> TracerProvider:
 
 def new_tracer(provider: TracerProvider, name: str):
     return provider.get_tracer(name)
+
+def read_file(file_path: str) -> str:
+    with open(file_path, 'r', encoding='utf-8') as file:
+        return file.read()
