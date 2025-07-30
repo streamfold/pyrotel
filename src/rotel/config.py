@@ -102,6 +102,7 @@ class Options(TypedDict, total=False):
     log_file: str | None
     log_format: str | None
     debug_log: list[str] | None
+    debug_log_verbosity: str | None
     batch_max_size: int | None
     batch_timeout: str | None
     otlp_grpc_endpoint: str | None
@@ -115,6 +116,10 @@ class Options(TypedDict, total=False):
     exporters_metrics: list[str] | None
     exporters_traces: list[str] | None
     exporters_logs: list[str] | None
+    # Processors
+    processors_metrics: list[str] | None
+    processors_traces: list[str] | None
+    processors_logs: list[str] | None
 
 class Config:
     DEFAULT_OPTIONS = Options(
@@ -155,13 +160,13 @@ class Config:
         """Construct an OTLP exporter config"""
         options["_type"] = "otlp"
         return options
-        
+
     @staticmethod
     def kafka_exporter(**options: Unpack[KafkaExporter]) -> KafkaExporter:
         """Construct a Kafka exporter config"""
         options["_type"] = "kafka"
         return options
-    
+
     @staticmethod
     def blackhole_exporter() -> BlackholeExporter:
         """Construct a Blackhole exporter config"""
@@ -177,6 +182,7 @@ class Config:
             log_file = rotel_env("LOG_FILE"),
             log_format = rotel_env("LOG_FORMAT"),
             debug_log = as_list(rotel_env("DEBUG_LOG")),
+            debug_log_verbosity = rotel_env("DEBUG_LOG_VERBOSITY"),
             batch_max_size = as_int(rotel_env("BATCH_MAX_SIZE")),
             batch_timeout = rotel_env("BATCH_TIMEOUT"),
             otlp_grpc_endpoint = rotel_env("OTLP_GRPC_ENDPOINT"),
@@ -184,6 +190,9 @@ class Config:
             otlp_receiver_traces_disabled = as_bool(rotel_env("OTLP_RECEIVER_TRACES_DISABLED")),
             otlp_receiver_metrics_disabled = as_bool(rotel_env("OTLP_RECEIVER_METRICS_DISABLED")),
             otlp_receiver_logs_disabled = as_bool(rotel_env("OTLP_RECEIVER_LOGS_DISABLED")),
+            processors_metrics = as_list(rotel_env("OTLP_WITH_METRICS_PROCESSOR")),
+            processors_traces = as_list(rotel_env("OTLP_WITH_TRACE_PROCESSOR")),
+            processors_logs = as_list(rotel_env("OTLP_WITH_LOGS_PROCESSOR")),
         )
         exporters = as_lower(rotel_env("EXPORTERS"))
         if exporters is not None:
@@ -222,7 +231,7 @@ class Config:
                             enable_json = as_bool(rotel_env(pfx + "ENABLE_JSON")),
                             json_underscore = as_bool(rotel_env(pfx + "JSON_UNDERSCORE")),
                         )
-                        
+
                     case "kafka":
                         exporter = KafkaExporter(
                             _type = "kafka",
@@ -251,7 +260,7 @@ class Config:
                             sasl_mechanism = rotel_env(pfx + "SASL_MECHANISM"),
                             security_protocol = rotel_env(pfx + "SECURITY_PROTOCOL"),
                         )
-                        
+
                     case "blackhole":
                         exporter = BlackholeExporter(
                             _type = "blackhole",
@@ -259,7 +268,7 @@ class Config:
 
                 if exporter is not None:
                     env["exporters"][name] = exporter
-            
+
             env["exporters_traces"] = as_list(rotel_env("EXPORTERS_TRACES"))
             env["exporters_metrics"] = as_list(rotel_env("EXPORTERS_METRICS"))
             env["exporters_logs"] = as_list(rotel_env("EXPORTERS_LOGS"))
@@ -345,6 +354,7 @@ class Config:
             "LOG_FILE": opts.get("log_file"),
             "LOG_FORMAT": opts.get("log_format"),
             "DEBUG_LOG": opts.get("debug_log"),
+            "DEBUG_LOG_VERBOSITY": opts.get("debug_log_verbosity"),
             "BATCH_MAX_SIZE": opts.get("batch_max_size"),
             "BATCH_TIMEOUT": opts.get("batch_timeout"),
             "OTLP_GRPC_ENDPOINT": opts.get("otlp_grpc_endpoint"),
@@ -352,6 +362,9 @@ class Config:
             "OTLP_RECEIVER_TRACES_DISABLED": opts.get("otlp_receiver_traces_disabled"),
             "OTLP_RECEIVER_METRICS_DISABLED": opts.get("otlp_receiver_metrics_disabled"),
             "OTLP_RECEIVER_LOGS_DISABLED": opts.get("otlp_receiver_logs_disabled"),
+            "OTLP_WITH_METRICS_PROCESSOR": opts.get("processors_metrics"),
+            "OTLP_WITH_TRACE_PROCESSOR": opts.get("processors_traces"),
+            "OTLP_WITH_LOGS_PROCESSOR": opts.get("processors_logs"),
         }
 
         exporters = opts.get("exporters")
@@ -409,7 +422,7 @@ class Config:
     def validate(self) -> bool | None:
         if not self.options.get("enabled"):
             return None
-            
+
         exporters = self.options.get("exporters")
         if exporters:
             # Require at least one of exporters_traces, exporters_metrics, exporters_logs
@@ -425,7 +438,7 @@ class Config:
                         if exporter_name not in exporters:
                             _errlog(f"Exporter '{exporter_name}' in {exporters_list_name} not found in exporters config")
                             return False
-            
+
             exporter = self.options.get("exporter")
             if self.options.get("exporter"):
                 _errlog("can not use exporters and exporter config together")
@@ -504,7 +517,7 @@ def _set_datadog_exporter_agent_env(updates: dict, pfx: str | None, exporter: Da
         pfx + "CUSTOM_ENDPOINT": exporter.get("custom_endpoint"),
         pfx + "API_KEY": exporter.get("api_key"),
     })
-                
+
 def _set_clickhouse_exporter_agent_env(updates: dict, pfx: str | None, exporter: ClickhouseExporter) -> None:
     if pfx is None:
         pfx = "CLICKHOUSE_EXPORTER_"
@@ -524,7 +537,7 @@ def _set_clickhouse_exporter_agent_env(updates: dict, pfx: str | None, exporter:
         pfx + "ENABLE_JSON": exporter.get("enable_json"),
         pfx + "JSON_UNDERSCORE": exporter.get("json_underscore"),
     })
-    
+
 def _set_kafka_exporter_agent_env(updates: dict, pfx: str | None, exporter: DatadogExporter) -> None:
     if pfx is None:
         pfx = "KAFKA_EXPORTER_"

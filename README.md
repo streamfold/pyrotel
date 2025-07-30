@@ -95,15 +95,16 @@ To set the endpoint the OpenTelemetry SDK will use, set the following environmen
 
 This is the full list of global options and their environment variable alternatives. Any defaults left blank in the table are either False or None.
 
-| Option Name        | Type      | Environ                  | Default              | Options               |
-| ------------------ | --------- | ------------------------ | -------------------- | --------------------- |
-| enabled            | bool      | ROTEL_ENABLED            |                      |                       |
-| pid_file           | str       | ROTEL_PID_FILE           | /tmp/rotel-agent.pid |                       |
-| log_file           | str       | ROTEL_LOG_FILE           | /tmp/rotel-agent.log |                       |
-| log_format         | str       | ROTEL_LOG_FORMAT         | text                 | json, text            |
-| debug_log          | list[str] | ROTEL_DEBUG_LOG          |                      | traces, metrics, logs |
-| otlp_grpc_endpoint | str       | ROTEL_OTLP_GRPC_ENDPOINT | localhost:4317       |                       |
-| otlp_http_endpoint | str       | ROTEL_OTLP_HTTP_ENDPOINT | localhost:4318       |                       |
+| Option Name         | Type      | Environ                   | Default              | Options               |
+| ------------------- | --------- | ------------------------- | -------------------- | --------------------- |
+| enabled             | bool      | ROTEL_ENABLED             |                      |                       |
+| pid_file            | str       | ROTEL_PID_FILE            | /tmp/rotel-agent.pid |                       |
+| log_file            | str       | ROTEL_LOG_FILE            | /tmp/rotel-agent.log |                       |
+| log_format          | str       | ROTEL_LOG_FORMAT          | text                 | json, text            |
+| debug_log           | list[str] | ROTEL_DEBUG_LOG           |                      | traces, metrics, logs |
+| debug_log_verbosity | str       | ROTEL_DEBUG_LOG_VERBOSITY | basic                | basic, detailed       |
+| otlp_grpc_endpoint  | str       | ROTEL_OTLP_GRPC_ENDPOINT  | localhost:4317       |                       |
+| otlp_http_endpoint  | str       | ROTEL_OTLP_HTTP_ENDPOINT  | localhost:4318       |                       |
 
 For each exporter you would like to use, see the configuration options below. Exporters should be
 assigned to the `exporters` dict with a custom name.
@@ -221,6 +222,20 @@ rotel = Rotel(
 )
 rotel.start()
 ```
+
+### Processors
+
+You can pass a list of Python files to Rotel that support the Python Processor SDK,
+by settting the following top-level config values. Each takes a list of absolute file paths to files implementing the
+processor SDK.
+
+| Option Name        | Type      |
+| ------------------ | --------- |
+| processors_metrics | list[str] |
+| processors_traces  | list[str] |
+| processors_logs    | list[str] |
+
+See the [Python Processor SDK](https://rotel.dev/docs/processor-sdk/overview) docs for more information.
 
 ### Retries and timeouts
 
