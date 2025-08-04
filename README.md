@@ -1,13 +1,13 @@
 # rotel 🌶️ 🍅
 
-Python package for the Rotel lightweight OpenTelemetry collector.
+Python package for [Rotel](https://github.com/streamfold/rotel).
 
 [![PyPI - Version](https://img.shields.io/pypi/v/rotel.svg)](https://pypi.org/project/rotel)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/rotel.svg)](https://pypi.org/project/rotel)
 
 ## Description
 
-This package provides an embedded OpenTelemetry collector, built on the lightweight [Rotel collector](https://github.com/streamfold/rotel). When started, it spawns a background daemon that accepts OpenTelemetry metrics, traces, and logs. Designed for minimal overhead, Rotel reduces resource consumption while simplifying telemetry collection and processing in complex Python applications—without requiring additional sidecar containers.
+This package provides an embedded lightweight agent that can collect OpenTelemetry data, built on [Rotel](https://github.com/streamfold/rotel). When started, it spawns a background daemon that accepts OpenTelemetry metrics, traces, and logs. Designed for minimal overhead, Rotel reduces resource consumption while simplifying telemetry collection and processing in complex Python applications—without requiring additional sidecar containers.
 
 | Telemetry Type | Support |
 | -------------- | ------- |
@@ -85,7 +85,7 @@ See the [_Configuration_](#configuration) section for the full list of options.
 
 ### OpenTelemetry SDK configuration
 
-Once the rotel collector agent is running, you may need to configure your application's instrumentation. If you are using the default rotel endpoints of _localhost:4317_ and _localhost:4318_, then you should not need to change anything.
+Once the Rotel agent is running, you may need to configure your application's instrumentation. If you are using the default rotel endpoints of _localhost:4317_ and _localhost:4318_, then you should not need to change anything.
 
 To set the endpoint the OpenTelemetry SDK will use, set the following environment variable:
 
